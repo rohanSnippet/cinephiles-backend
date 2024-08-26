@@ -10,6 +10,7 @@ public class CinephilesApplication {
 	public static void main(String[] args) {
 
 		System.out.println("Hello");
+		System.out.println("Rohan");
 
 		SpringApplication.run(CinephilesApplication.class, args);
 	}
