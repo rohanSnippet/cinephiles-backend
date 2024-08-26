@@ -41,7 +41,7 @@ public class UserService {
             throw new UserAlreadyExistsException("Username already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(Role.THEATRE_OWNER);
+        user.setRole(Role.USER);
         return userRepo.save(user);
     }
 
@@ -59,34 +59,5 @@ public class UserService {
         User user = userRepo.getUserByUsername(username);
         return user.getRole()==Role.THEATRE_OWNER;
     }
-
-    @Transactional
-    public void assignRoleToUser(String username, Role newRole){
-        Optional<User> optionalUser = userRepo.findByUsername(username);
-        if(optionalUser.isPresent()){
-            User user = optionalUser.get();
-            user.setRole(newRole);
-            if(newRole == Role.THEATRE_OWNER){
-                createOwnerForUser(user);
-            } else if(newRole == Role.ADMIN){
-                createAdminForUser(user);
-            }
-            userRepo.save(user);
-        }
-    }
-
-    private void createOwnerForUser(User user) {
-        Owner owner = new Owner();
-        owner.setUser(user);
-        owner.setRevenue(0.0f);
-        ownerRepo.save(owner);
-    }
-    private void createAdminForUser(User user) {
-        Admin admin = new Admin();
-        admin.setUser(user);
-        admin.setRevenue(0.0f);
-        adminRepo.save(admin);
-    }
-
 
 }

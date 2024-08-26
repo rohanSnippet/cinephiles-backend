@@ -1,11 +1,8 @@
 package com.projects.cinephiles.Controllers;
 
-import com.projects.cinephiles.Enum.Role;
-import com.projects.cinephiles.Repo.UserRepo;
 import com.projects.cinephiles.Service.OwnerService;
 import com.projects.cinephiles.Service.TheatreRequestService;
 import com.projects.cinephiles.Service.UserService;
-import com.projects.cinephiles.models.Admin;
 import com.projects.cinephiles.models.Owner;
 import com.projects.cinephiles.models.TheatreRequest;
 import com.projects.cinephiles.models.User;
@@ -41,19 +38,20 @@ public class AdminController {
         return ownerService.getAllOwners();
         }
 
-    @PutMapping("/change-role")
-    public ResponseEntity<String> assignRole(@RequestParam String username, @RequestParam Role newRole) {
-        try {
-            userService.assignRoleToUser(username, newRole);
-            return ResponseEntity.ok("Role assigned successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to assign role.");
-        }
-    }
 
     @GetMapping("/requests")
     public ResponseEntity<List<TheatreRequest>> getAllRequest(){
         return theatreRequestService.getAllRequests();
+    }
+
+    @PutMapping("/make-owner")
+    public ResponseEntity<Owner> makeUserOwner(@RequestParam String username) {
+        try {
+            Owner owner = ownerService.makeUserOwner(username);
+            return ResponseEntity.ok(owner);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
 }
