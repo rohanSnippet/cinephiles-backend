@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Getter
@@ -23,24 +24,44 @@ public class User implements UserDetails {
     private Long id;
 
     private String firstName;
+
     private String lastName;
 
     @Column(nullable = false, name = "email")
     private String username;
 
-    @Column(nullable = false)
+    @Column( name = "Mobile")
+    private String phone;
+
+    @Column
     private String password;
+
+    private String profile;
+
+    private String publicId;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
     private String gender;
-    private Date dob;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "address_id", referencedColumnName = "id")
-    @JsonIgnore
-    private Address address;
+    private String CurrLocation;
+
+    private LocalDate dob;
+
+    private String pincode;
+
+    private String addressLine;
+
+    private String landmark;
+
+    private String city;
+
+    private String state;
+
+    private String provider;
+
+    private String providerId;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -58,6 +79,7 @@ public class User implements UserDetails {
     @JsonIgnore
     private Admin admin;
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

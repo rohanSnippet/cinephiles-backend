@@ -1,10 +1,7 @@
 package com.projects.cinephiles.Controllers;
 
-import com.projects.cinephiles.Service.OwnerService;
-import com.projects.cinephiles.Service.TheatreRequestService;
-import com.projects.cinephiles.Service.UserService;
+import com.projects.cinephiles.Service.*;
 import com.projects.cinephiles.models.Owner;
-import com.projects.cinephiles.models.TheatreRequest;
 import com.projects.cinephiles.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,7 +23,13 @@ public class AdminController {
     OwnerService ownerService;
 
     @Autowired
+    AdminService adminService;
+
+    @Autowired
     TheatreRequestService theatreRequestService;
+
+    @Autowired
+    TheatreService theatreService;
 
     @GetMapping("/all-users")
         public List<User> getAllUsers(){
@@ -39,15 +42,10 @@ public class AdminController {
         }
 
 
-    @GetMapping("/requests")
-    public ResponseEntity<List<TheatreRequest>> getAllRequest(){
-        return theatreRequestService.getAllRequests();
-    }
-
     @PutMapping("/make-owner")
-    public ResponseEntity<Owner> makeUserOwner(@RequestParam String username) {
+    public ResponseEntity<Owner> makeUserOwner(@RequestParam String username, @RequestParam Long id) {
         try {
-            Owner owner = ownerService.makeUserOwner(username);
+            Owner owner = ownerService.makeUserOwner(username,id);
             return ResponseEntity.ok(owner);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);

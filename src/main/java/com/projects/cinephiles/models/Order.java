@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @AllArgsConstructor
@@ -28,14 +29,8 @@ public class Order {
 
     private Integer seats;
     private Double totalAmount;
-    private LocalDateTime bookingTime;
+    private LocalTime bookingTime;
+    private LocalDate bookingDate;
     private Boolean isCanceled;
 
-    public boolean cancelBooking() {
-        if (LocalDateTime.now().isBefore(this.show.getShowTime())) {
-            this.isCanceled = true;
-            return true;
-        }
-        return false;
-    }
 }

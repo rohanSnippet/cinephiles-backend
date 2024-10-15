@@ -21,15 +21,15 @@ public class Tier {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String tiername;
 
     @Column(nullable = false)
     private double price;
 
-    @Column(nullable = false,name = "`rows`")
+    @Column(nullable = false, name = "`rows`")
     private int rows;
 
-    @Column(nullable = false,name = "`columns`")
+    @Column(nullable = false, name = "`columns`")
     private int columns;
 
     @OneToMany(mappedBy = "tier", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -39,8 +39,5 @@ public class Tier {
     @JoinColumn(name = "screen_id", nullable = false)
     @JsonIgnore
     private Screen screen;
-
-
-
 }
 

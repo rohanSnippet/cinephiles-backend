@@ -20,12 +20,18 @@ public class Seat {
     @Column(nullable = false)
     private String seatId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private SeatStatus status;
 
     @ManyToOne
-    @JoinColumn(name = "tier_id")
+    @JoinColumn(name = "tier_id", nullable = false)
     @JsonIgnore
     private Tier tier;
-
+}
+enum SeatStatus {
+    AVAILABLE,
+    BOOKED,
+    BLOCKED,
+    NO_SEAT
 }

@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -41,7 +41,7 @@ public class Movie {
 
     @ElementCollection
     @CollectionTable(name = "movie_formats", joinColumns = @JoinColumn(name = "movie_id"))
-    @Column(name = "format")
+    @Column(name = "formats")
     private List<String> formats;
 
     private Double ratings;
@@ -54,8 +54,9 @@ public class Movie {
     @Column(name = "role")
     private Map<String, String> cast;
 
-    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)  // Cascade and orphan removal
     private List<CrewMember> crew;
+
     private String poster;
     private String banner;
 
@@ -69,7 +70,7 @@ public class Movie {
     private Boolean bookingOpen;
     private Boolean promoted;
 
-    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)  // Cascade and orphan removal
     @JsonIgnore
     private List<Show> shows;
 }

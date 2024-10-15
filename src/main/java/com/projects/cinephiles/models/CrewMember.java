@@ -1,5 +1,6 @@
 package com.projects.cinephiles.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,12 +20,14 @@ public class CrewMember {
     private Long id;
 
     private String name;
+
     @ElementCollection
     @CollectionTable(name = "crew_roles", joinColumns = @JoinColumn(name = "crew_member_id"))
     @Column(name = "role")
     private List<String> roles;
 
     @ManyToOne
-    @JoinColumn(name = "movie_id")
+    @JoinColumn(name = "movie_id", nullable = false)  // Ensures every crew member must be associated with a movie
+    @JsonIgnore
     private Movie movie;
 }

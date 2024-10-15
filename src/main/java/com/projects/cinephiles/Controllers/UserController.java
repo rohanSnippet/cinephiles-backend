@@ -1,15 +1,13 @@
 package com.projects.cinephiles.Controllers;
 
-import com.projects.cinephiles.Enum.Role;
 import com.projects.cinephiles.Service.TheatreRequestService;
 import com.projects.cinephiles.Service.UserService;
-import com.projects.cinephiles.models.TheatreRequest;
 import com.projects.cinephiles.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
@@ -36,9 +34,16 @@ public class UserController {
         return userService.checkIfUserIsOwner(username);
     }
 
-    @PostMapping("/make-request")
-    public TheatreRequest makeTheatreRequest(@RequestBody TheatreRequest theatreRequest){
-      return theatreRequestService.makeRequest(theatreRequest);
+    @PutMapping("/update-user/{id}")
+    public ResponseEntity<User> UpdateUserById(@PathVariable Long id, @RequestBody User user){
+        return userService.updateUserById( id, user);
+    }
+
+    @PutMapping("/update-location/{id}")
+    public ResponseEntity<User> updateLocation(@PathVariable Long id, @RequestBody Map<String, String> requestBody) {
+        String currLocation = requestBody.get("currLocation");
+        System.out.println("Received currLocation: " + currLocation); // Debug log
+        return userService.updateLocationById(id, currLocation);
     }
 
 }

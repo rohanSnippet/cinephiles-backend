@@ -11,7 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@ToString
 @Table(name = "owners")
 public class Owner {
 
@@ -24,10 +23,11 @@ public class Owner {
     @JsonIgnore
     private User user;
 
-    @OneToMany
-    @JsonIgnore
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Theatre> theatres;
+
     private Float revenue;
+
     // Add other fields specific to Owners
 }
 

@@ -19,7 +19,14 @@ public class TheatreRequest {
     @Column(name="email")
     private String username;
     private String contact;
-
+    private String tname;
+    private String tlocation;
+    private String state;
+    private String address;
+    private int tscreens;
+    private String pan;
+    private String accountNo;
+    private String cgstNo;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore
