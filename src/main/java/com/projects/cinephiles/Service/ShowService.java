@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,9 +38,9 @@ public class ShowService {
         // Create and save the Show entity
         Show show = new Show();
         show.setMovie(movie);
-        show.setScreen(screen);
         show.setTheatre(theatre);
         show.setRuntime(movie.getRuntime());
+        show.setScreen(screen);
         show.setTitle(movie.getTitle());
         show.setBanner(movie.getBanner());
         show.setShowDate(showRequest.getShowDate());
@@ -86,6 +87,18 @@ public class ShowService {
 
         }else{
             return Collections.emptyList();
+        }
+    }
+
+    public Show getLastShowOfDay(Long screenId, String showDate) {
+        Optional<Screen> optionalScreen = screenRepository.findById(screenId);
+
+        if(optionalScreen.isPresent()){
+            Screen screen = optionalScreen.get();
+           List<Show> shows = screen.getShows();
+         return  shows.stream().filter(show -> show.getShowDate().equals(showDate)).max(Comparator.comparing(Show::getEnd)).orElse(null);
+        }else{
+            return null;
         }
     }
 }
