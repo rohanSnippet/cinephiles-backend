@@ -87,4 +87,5 @@ public class OwnerService {
         return owner.getTheatres();
     }
 
+
 }

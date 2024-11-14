@@ -3,15 +3,14 @@ package com.projects.cinephiles.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.projects.cinephiles.Enum.Certification;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -54,7 +53,8 @@ public class Movie {
     @Column(name = "role")
     private Map<String, String> cast;
 
-    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)  // Cascade and orphan removal
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
+
     private List<CrewMember> crew;
 
     private String poster;

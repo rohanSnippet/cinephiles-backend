@@ -22,6 +22,12 @@ public class Booking {
     @JsonIgnore
     private Show show;
 
-    private Integer seats;
-    private Double totalAmount;
+    private String seatsIds;
+    private Double totalAmount; //send
+    @Column(name = "theatre")
+    private Long theatreId;
+    @Column(name = "user")
+    private String user; //send
+    @Column(name = "owner")
+    private Long owner; //send
 }

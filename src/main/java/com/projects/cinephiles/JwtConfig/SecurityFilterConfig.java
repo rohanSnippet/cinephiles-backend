@@ -29,7 +29,7 @@ public class SecurityFilterConfig {
 
         return security.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/movie/**","/show/**","/theatre/get-theatres/by-location","/actor/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2-> oauth2.loginPage("http://localhost:5173/auth/login").successHandler(oAuth2SuccessHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))

@@ -24,10 +24,11 @@ public class CrewMember {
     @ElementCollection
     @CollectionTable(name = "crew_roles", joinColumns = @JoinColumn(name = "crew_member_id"))
     @Column(name = "role")
-    private List<String> roles;
+    private List<String> roles;  // Change this to List<String>
 
-    @ManyToOne
-    @JoinColumn(name = "movie_id", nullable = false)  // Ensures every crew member must be associated with a movie
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "movie_id")
     @JsonIgnore
     private Movie movie;
+
 }

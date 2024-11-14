@@ -32,7 +32,7 @@ public class ShowRequest {
     @CollectionTable(name = "tier_price", joinColumns = @JoinColumn(name = "showRequest_id"))
     @MapKeyColumn(name = "tier_name")
     @Column(name = "price")
-    private Map<String, Integer> price;
+    private Map<String, Double> price;
 
     private Long theatreId;
 

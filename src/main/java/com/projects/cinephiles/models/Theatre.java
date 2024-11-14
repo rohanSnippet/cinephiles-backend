@@ -32,7 +32,7 @@ public class Theatre {
     private List<Screen> screens;
 
     @OneToMany(mappedBy = "theatre", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
+   // @ToString.Exclude
     private List<Show> shows;
 
     @ManyToOne

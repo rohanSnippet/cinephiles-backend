@@ -1,5 +1,6 @@
 package com.projects.cinephiles.Service;
 
+import com.projects.cinephiles.Enum.ShowStatus;
 import com.projects.cinephiles.Repo.MovieRepo;
 import com.projects.cinephiles.Repo.ScreenRepository;
 import com.projects.cinephiles.Repo.ShowRepo;
@@ -37,12 +38,25 @@ public class ShowService {
 
         // Create and save the Show entity
         Show show = new Show();
+       List<Tier> tiers = screen.getTiers();
+
+      int totalSeats = 0;
+        for (Tier tier:
+            tiers ) {
+          totalSeats += (tier.getRows()*tier.getColumns());
+        }
+
         show.setMovie(movie);
         show.setTheatre(theatre);
+        show.setTId(theatre.getId());
+        show.setMId(movie.getId());
+        show.setSId(screen.getId());
         show.setRuntime(movie.getRuntime());
         show.setScreen(screen);
+        show.setStatus(ShowStatus.AVAILABLE);
         show.setTitle(movie.getTitle());
         show.setBanner(movie.getBanner());
+        show.setTotalSeats(totalSeats);
         show.setShowDate(showRequest.getShowDate());
         show.setFormat(showRequest.getFormat());
         show.setStart(showRequest.getStart());
@@ -101,5 +115,28 @@ public class ShowService {
             return null;
         }
     }
+
+    public List<Show> getShowsByMovieAndCity(Long movieId, List<String> city) {
+        List<Show> shows = showRepo.findActiveShowsByMovieAndCity(movieId, city);
+        shows.forEach(this::updateShowStatus);
+        return shows;
+    }
+
+    private void updateShowStatus(Show show) {
+        int totalSeats = show.getTotalSeats();
+        int bookedSeats = (int) show.getBooked().stream()
+                .filter(seat -> !seat.equalsIgnoreCase("NO_SEAT"))
+                .count();
+        double occupancy = (double) bookedSeats / totalSeats;
+
+        if (occupancy == 1.0) {
+            show.setStatus(ShowStatus.HOUSEFULL);
+        } else if (occupancy >= 0.7) {
+            show.setStatus(ShowStatus.FAST_FILLING);
+        } else {
+            show.setStatus(ShowStatus.AVAILABLE);
+        }
+    }
+
 }
 

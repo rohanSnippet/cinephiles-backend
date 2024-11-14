@@ -1,5 +1,6 @@
 package com.projects.cinephiles.models;
 
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,14 +24,17 @@ public class Order {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(name = "username")
+    private String username;
+
     @ManyToOne
     @JoinColumn(name = "show_id")
     private Show show;
 
-    private Integer seats;
+    @Column(name = "seats_booked")
+    private String seats;
     private Double totalAmount;
     private LocalTime bookingTime;
     private LocalDate bookingDate;
-    private Boolean isCanceled;
-
+    private Boolean isCanceled=false;
 }

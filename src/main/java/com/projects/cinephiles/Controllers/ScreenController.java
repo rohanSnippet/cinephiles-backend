@@ -25,9 +25,9 @@ public class ScreenController {
         return ResponseEntity.ok(screenService.saveScreen(tId,screen));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Screen> getScreen(@PathVariable Long id) {
-        return ResponseEntity.ok(screenService.getScreen(id));
+    @GetMapping("/{sid}")
+    public ResponseEntity<Screen> getScreen(@PathVariable Long sid) {
+        return ResponseEntity.ok(screenService.getScreen(sid));
     }
  @GetMapping("/all/{username}")
     public ResponseEntity<List<Screen>> getScreenByUsername(@PathVariable String username) {
