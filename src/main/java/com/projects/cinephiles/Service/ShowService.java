@@ -138,5 +138,12 @@ public class ShowService {
         }
     }
 
+    public void deleteShowById(Long sId) {
+        if (!showRepo.existsById(sId)) {
+            throw new IllegalArgumentException("Course with ID " + sId + " not found");
+        }
+        showRepo.deleteById(sId);
+
+    }
 }
 

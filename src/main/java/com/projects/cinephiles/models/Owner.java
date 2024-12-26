@@ -29,6 +29,6 @@ public class Owner {
 
     private Float revenue;
 
-    // Add other fields specific to Owners
+
 }
 

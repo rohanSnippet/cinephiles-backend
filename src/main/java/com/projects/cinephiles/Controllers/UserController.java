@@ -52,4 +52,9 @@ public class UserController {
         return userService.updateLocationById(id, currLocation);
     }
 
+
+//    @GetMapping("/getCity")
+//    public String getUserCity(String email){
+//        return userService.getUserCities(email);
+//    }
 }

@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -134,4 +135,21 @@ public class UserService {
         }
     }
 
+    public List<String> getUserCities(String email) {
+        Optional<User> opUser = userRepo.findByUsername(email);
+
+        List<String> cities = new ArrayList<>();
+
+        if (opUser.isPresent()) {
+            User user = opUser.get();
+            if (user.getCurrLocation() != null) {
+                // Add the city to the list (even if there's only one city)
+                cities.add(user.getCurrLocation());
+            }
+            System.out.println(user.getCurrLocation());
+        }
+
+        System.out.println(cities);
+        return cities;
+    }
 }
