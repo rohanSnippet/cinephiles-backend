@@ -1,5 +1,6 @@
 package com.projects.cinephiles.Service;
 
+import com.projects.cinephiles.Enum.SeatStatus;
 import com.projects.cinephiles.Enum.ShowStatus;
 import com.projects.cinephiles.Repo.MovieRepo;
 import com.projects.cinephiles.Repo.ScreenRepository;
@@ -8,6 +9,7 @@ import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,10 +43,14 @@ public class ShowService {
        List<Tier> tiers = screen.getTiers();
 
       int totalSeats = 0;
-        for (Tier tier:
-            tiers ) {
-          totalSeats += (tier.getRows()*tier.getColumns());
+        for (Tier tier : tiers) {
+            long availableSeatsInTier = tier.getSeats().stream()
+                    .filter(seat -> seat.getStatus() == SeatStatus.AVAILABLE)
+                    .count();
+            totalSeats += availableSeatsInTier;
         }
+        System.out.println(totalSeats);
+
 
         show.setMovie(movie);
         show.setTheatre(theatre);
@@ -116,6 +122,8 @@ public class ShowService {
         }
     }
 
+
+    @Transactional
     public List<Show> getShowsByMovieAndCity(Long movieId, List<String> city) {
         List<Show> shows = showRepo.findActiveShowsByMovieAndCity(movieId, city);
         shows.forEach(this::updateShowStatus);
@@ -127,16 +135,23 @@ public class ShowService {
         int bookedSeats = (int) show.getBooked().stream()
                 .filter(seat -> !seat.equalsIgnoreCase("NO_SEAT"))
                 .count();
+        System.out.println(bookedSeats);
+        System.out.println(totalSeats);
         double occupancy = (double) bookedSeats / totalSeats;
-
+        System.out.println(occupancy);//22
         if (occupancy == 1.0) {
             show.setStatus(ShowStatus.HOUSEFULL);
-        } else if (occupancy >= 0.7) {
+
+        } else if (occupancy >= 0.55) {
             show.setStatus(ShowStatus.FAST_FILLING);
+
         } else {
             show.setStatus(ShowStatus.AVAILABLE);
+
         }
+        showRepo.save(show);
     }
+
 
     public void deleteShowById(Long sId) {
         if (!showRepo.existsById(sId)) {

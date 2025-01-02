@@ -1,6 +1,7 @@
 package com.projects.cinephiles.models;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,15 +23,19 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
-
+    private String bookingId;
     @Column(name = "username")
     private String username;
+    private String status;
 
-    @ManyToOne
-    @JoinColumn(name = "show_id")
+    @Column(name = "show_id")
+    private String poster;
+    @Column(name = "show_data")
     private Show show;
-
+    private String screenName;
+    private String theatre;
     @Column(name = "seats_booked")
     private String seats;
     private Double totalAmount;

@@ -158,6 +158,7 @@ public class BookingService {
             Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser());
             LockedSeats lockedSeats = optionalLockedSeats.get();
             Show show = optionalShow.get();
+            Screen screen = show.getScreen();
             Booking newBooking = new Booking();
             newBooking.setTheatreId(show.getTId());
             newBooking.setShow(show);
@@ -174,6 +175,7 @@ public class BookingService {
             order.setBookingTime(LocalTime.now());
             order.setBookingDate(LocalDate.now());
             order.setShow(show);
+            order.setScreenName(screen.getSname());
             User opUser = userRepo.getUserByUsername(lockedSeats.getUser());
             order.setUser(opUser);
             order.setUsername(lockedSeats.getUser());

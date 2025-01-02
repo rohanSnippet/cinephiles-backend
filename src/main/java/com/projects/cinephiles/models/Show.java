@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Entity
 @Table(name = "shows")
-public class Show {
+public class Show implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
