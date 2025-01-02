@@ -5,7 +5,7 @@ public class OrderRequest {
     private double orderAmount;
     private String customerId;
     private String customerPhone;
-    private String customerEmail;
+
 
     // Getters and Setters
     public String getOrderId() {
@@ -40,12 +40,5 @@ public class OrderRequest {
         this.customerPhone = customerPhone;
     }
 
-    public String getCustomerEmail() {
-        return customerEmail;
-    }
-
-    public void setCustomerEmail(String customerPhone) {
-        this.customerEmail= customerEmail;
-    }
 }
 
