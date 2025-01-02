@@ -5,9 +5,10 @@ import com.projects.cinephiles.Service.CashfreeService;
 import com.projects.cinephiles.Service.UserService;
 import com.projects.cinephiles.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/payment")
@@ -29,7 +30,7 @@ public class PaymentController {
         System.out.println(user);
 
         return cashfreeService.createOrderSession(
-                orderRequest.getOrderId(),
+
                 orderRequest.getOrderAmount(),
                 user
         );
