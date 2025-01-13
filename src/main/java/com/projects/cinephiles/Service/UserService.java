@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,20 @@ public class UserService {
         return user.getRole()==Role.THEATRE_OWNER;
     }
 
+    public User createUserFromOAuth2(OAuth2User oauth2User) {
+        // Extract user information from OAuth2User
+        String username = oauth2User.getAttribute("name");
+        String email = oauth2User.getAttribute("email");
+
+        // Create and save new user in your database
+        User newUser = new User();
+        if (username == null) throw new AssertionError();
+        newUser.setFirstName(username.split(" ")[0]);
+        newUser.setLastName(username.split(" ")[1]);
+        newUser.setUsername(email);
+        // Set other fields as necessary (e.g., role, password, etc.)
+        return userRepo.save(newUser);
+    }
 
     @Transactional
     public ResponseEntity<User> updateUserById(Long id, User updatedUser) {

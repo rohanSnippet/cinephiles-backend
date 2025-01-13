@@ -83,21 +83,31 @@ public class BookingService {
 
 
     @Transactional
-    @Scheduled(fixedRate = 20000) // Runs every minute
+    @Scheduled(fixedRate = 20000) // Runs every 20 seconds
     public void releaseExpiredSeats() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         List<Show> shows = showRepo.findAll(); // Ensure it fetches shows with active sessions
 
         for (Show show : shows) {
+            // Find the expired locked seats
             List<LockedSeats> expiredSeats = show.getLockedSeats().stream()
                     .filter(seat -> seat.getExpirationTime().isBefore(now))
                     .collect(Collectors.toList());
 
-            show.getLockedSeats().removeAll(expiredSeats);
-        }
+            // Log the expired seats for debugging purposes
+            System.out.println("Expired seats: " + expiredSeats);
 
-        showRepo.saveAll(shows); // Persist the updates to the database
+            // Remove expired seats from the show
+            show.getLockedSeats().removeAll(expiredSeats);
+
+            // Delete expired seats from the database
+            lockedSeatsRepo.deleteAll(expiredSeats);
+
+            // Persist the updated show
+            showRepo.save(show);
+        }
     }
+
 
 
     @Transactional
@@ -150,10 +160,10 @@ public class BookingService {
     @Transactional
     public  ResponseEntity<String>  bookSeats(LockedSeatsRequests lockedSeatsRequests) {
         Optional<Show> optionalShow = showRepo.findById(lockedSeatsRequests.getShowId());
-
+        System.out.println("Entered in bookSeats");
         if (!optionalShow.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No shows found.");
-           
+
         }else{
             Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser());
             LockedSeats lockedSeats = optionalLockedSeats.get();
@@ -184,6 +194,7 @@ public class BookingService {
 
 
             show.getBooked().addAll(lockedSeats.getSeatsId());
+            System.out.println("booked");
             showRepo.save(show);
             return ResponseEntity.ok("Seats Booked");
         }

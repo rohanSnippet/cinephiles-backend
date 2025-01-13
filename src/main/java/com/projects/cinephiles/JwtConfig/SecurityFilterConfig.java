@@ -1,9 +1,11 @@
 package com.projects.cinephiles.JwtConfig;
 
+import com.projects.cinephiles.Config.CustomOAuth2SuccessHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,7 +24,7 @@ public class SecurityFilterConfig {
     private JwtAuthenticationFilter filter;
     private UserDetailsService userDetailsService;
     private PasswordEncoder passwordEncoder;
-   // private CustomOAuth2SuccessHandler oAuth2SuccessHandler;
+    private CustomOAuth2SuccessHandler oAuth2SuccessHandler;
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
 
@@ -32,6 +34,7 @@ public class SecurityFilterConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/movie/**","/show/**","/theatre/get-theatres/by-location","/actor/**").permitAll()
                         .anyRequest().authenticated())
                 //.oauth2Login(oauth2-> oauth2.loginPage("http://localhost:5173").successHandler(oAuth2SuccessHandler))
+                .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)

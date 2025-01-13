@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -49,6 +50,12 @@ public class JwtHelper {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return doGenerateToken(claims, userDetails.getUsername());
+    }
+
+    public String generateToken(OAuth2User oAuth2User){
+        Map<String,Object> claims = new HashMap<>();
+        String username = oAuth2User.getName();
+        return doGenerateToken(claims, username);
     }
 
     //while creating the token -

@@ -16,11 +16,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.Serializable;
+import java.util.Map;
 
 @AllArgsConstructor
 @RestController
@@ -72,10 +75,25 @@ public class AuthController {
         }
     }
 
+
     @GetMapping("/admin")
     public String createUser() throws Exception {
         return "Hello Admin";
     }
+
+    @GetMapping("/user-info")
+    public ResponseEntity<Map<String, Object>> getUserInfo(@AuthenticationPrincipal OAuth2User principal) {
+        // Check if the principal (authenticated user) is null
+        if (principal == null) {
+            // If not authenticated, return an error or empty map as response
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User is not authenticated"));
+        }
+
+        // Return user attributes if authenticated
+        return ResponseEntity.ok(principal.getAttributes());
+    }
+
 
 }
 

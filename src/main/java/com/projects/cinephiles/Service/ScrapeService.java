@@ -15,7 +15,7 @@ import java.util.Map;
 @Service
 public class ScrapeService {
 
-public static String newImgUrl(String name) throws IOException {
+    public static String newImgUrl(String name) throws IOException {
     String newval = name+"_(actor)";
     String nextUrl = "https://en.wikipedia.org/wiki/"+newval;
     Document doc1 = Jsoup.connect(nextUrl).get();
@@ -23,7 +23,6 @@ public static String newImgUrl(String name) throws IOException {
     System.out.println(newval+"----->"+nextUrl);
     return imgUrl;
 }
-
     public static ProfilesUrl scrapeActor(Map<String, String> cast) {
         ProfilesUrl res = new ProfilesUrl();
         Map<String, String> urls = new HashMap<>();
