@@ -31,7 +31,7 @@ public class SecurityFilterConfig {
 
         return security.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/movie/**","/show/**","/theatre/get-theatres/by-location","/actor/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/movie/**","/show/**","/theatre/get-theatres/by-location","/actor/**","/home").permitAll()
                         .anyRequest().authenticated())
                 //.oauth2Login(oauth2-> oauth2.loginPage("http://localhost:5173").successHandler(oAuth2SuccessHandler))
                 .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
@@ -53,9 +53,12 @@ public class SecurityFilterConfig {
     @Bean
     public CorsConfiguration corsConfiguration() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin("http://localhost:5173"); // Allow this specific origin
+        corsConfiguration.addAllowedOrigin("*"); // Allow this specific origin
         corsConfiguration.addAllowedMethod("*"); // Allow all methods
         corsConfiguration.addAllowedHeader("*"); // Allow all headers
+        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.addExposedHeader("Authorization");
+        corsConfiguration.addExposedHeader("X-Username");
         return corsConfiguration;
     }
 }

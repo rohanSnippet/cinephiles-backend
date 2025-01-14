@@ -59,6 +59,7 @@ public class UserService {
         // Extract user information from OAuth2User
         String username = oauth2User.getAttribute("name");
         String email = oauth2User.getAttribute("email");
+        String profile = oauth2User.getAttribute("picture");
 
         // Create and save new user in your database
         User newUser = new User();
@@ -66,6 +67,7 @@ public class UserService {
         newUser.setFirstName(username.split(" ")[0]);
         newUser.setLastName(username.split(" ")[1]);
         newUser.setUsername(email);
+        newUser.setProfile(profile);
         // Set other fields as necessary (e.g., role, password, etc.)
         return userRepo.save(newUser);
     }
