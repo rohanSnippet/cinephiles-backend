@@ -36,11 +36,31 @@ public class SecurityFilterConfig {
                         .anyRequest().authenticated())
                 //.oauth2Login(oauth2-> oauth2.loginPage("http://localhost:5173").successHandler(oAuth2SuccessHandler))
                 //.oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
-                .oauth2Login(oauth2 -> oauth2.defaultSuccessUrl("/home",true))
-                // .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
+                .oauth2Login(oauth2 -> oauth2.defaultSuccessUrl("http://localhost:5173/",true))
+                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                // .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                //.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+
+       /* return security.csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**", "/oauth2/**", "/movie/**", "/show/**", "/theatre/get-theatres/by-location", "/actor/**", "/").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2Login(oauth2 -> oauth2
+                        .defaultSuccessUrl("http://localhost:5173/", true)
+                        .failureUrl("/auth/login?error=true")) // Redirect on failure
+                .formLogin(form -> form
+                        .loginProcessingUrl("http://localhost:5173/login") // Custom login endpoint
+                        .successForwardUrl("http://localhost:5173/") // Redirect on success
+                        .failureUrl("http://localhost:5173/login") // Redirect on failure
+                        .permitAll()) // Allow everyone to access the login page
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(point)) // Handle unauthorized access
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // Use stateful session management
+                .build();*/
     }
 
 
@@ -55,7 +75,7 @@ public class SecurityFilterConfig {
     @Bean
     public CorsConfiguration corsConfiguration() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin("*"); // Allow this specific origin
+        corsConfiguration.addAllowedOrigin("http://localhost:5173/"); // Allow this specific origin
         corsConfiguration.addAllowedMethod("*"); // Allow all methods
         corsConfiguration.addAllowedHeader("*"); // Allow all headers
         corsConfiguration.setAllowCredentials(true);
