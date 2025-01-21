@@ -3,6 +3,7 @@ package com.projects.cinephiles.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import kotlin.OverloadResolutionByLambdaReturnType;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
@@ -52,10 +53,11 @@ public class JwtHelper {
         return doGenerateToken(claims, userDetails.getUsername());
     }
 
-    public String generateToken(OAuth2User oAuth2User){
-        Map<String,Object> claims = new HashMap<>();
-        String username = oAuth2User.getName();
-        return doGenerateToken(claims, username);
+    public String generateToken(OAuth2User oAuth2User) {
+        Map<String, Object> claims = new HashMap<>();
+        String username = oAuth2User.getAttribute("email");
+        claims.put("oauth", true); // Add custom claim
+        return generateTokenForOAuthUser(claims, username);
     }
 
     //while creating the token -
@@ -74,6 +76,15 @@ public class JwtHelper {
                 .compact();
     }
 
+    public String generateTokenForOAuthUser(Map<String, Object> claims, String username) {
+        return Jwts.builder()
+                .setClaims(claims) // Set the claims map
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
     //validate token
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = getUsernameFromToken(token);
