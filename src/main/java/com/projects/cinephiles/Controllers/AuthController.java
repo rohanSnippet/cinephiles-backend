@@ -7,9 +7,12 @@ import com.projects.cinephiles.JwtConfig.JwtResponse;
 import com.projects.cinephiles.Service.UserService;
 import com.projects.cinephiles.exceptions.UserAlreadyExistsException;
 import com.projects.cinephiles.models.User;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -94,6 +97,24 @@ public class AuthController {
         return ResponseEntity.ok(principal.getAttributes());
     }
 
+    @GetMapping("/callback")
+    public ResponseEntity<Map<String,String>> getUserInfo(HttpServletRequest request) {
+        // Return user attributes if authenticated
+        String token = (String) request.getSession().getAttribute("access-token");
+        System.out.println("callback token :"+token);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token not found"));
+        }
+
+        return ResponseEntity.ok(Map.of("token", token));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> oauthLogout(HttpServletRequest request){
+        System.out.println("logout hit");
+        request.getSession().invalidate();
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
 
 }
 
