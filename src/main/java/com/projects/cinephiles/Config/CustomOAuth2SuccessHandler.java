@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -16,8 +17,10 @@ import java.io.IOException;
 
 @Component
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
-
+    @Autowired
     private UserService userService;
+    @Autowired
+    private JwtHelper jwtHelper;
 
     public CustomOAuth2SuccessHandler(UserService userService) {
 
@@ -28,8 +31,19 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     @Override
 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        // Redirect to the frontend
-        response.sendRedirect("http://localhost:5173/login");
+        OAuth2User  oAuth2User  = (OAuth2User) authentication.getPrincipal();
+        String email = oAuth2User .getAttribute("email");
+        System.out.println("Oauth user:  "+oAuth2User.getAttributes());
+        User user = userService.getUserByUsername(email);
+        if(user==null){
+            user = userService.createUserFromOAuth2(oAuth2User);
+        }
+        // Generate JWT token
+        String jwtToken = jwtHelper.generateToken(oAuth2User);
+        System.out.println("jwtToken in success handler : "+jwtToken);
+        request.getSession().setAttribute("access-token", jwtToken);
+//        response.setHeader("Authorization", "Bearer " + jwtToken);
+        response.sendRedirect("http://localhost:5173");
     }
 }
 
