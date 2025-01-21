@@ -68,6 +68,7 @@ public class UserService {
         newUser.setLastName(username.split(" ")[1]);
         newUser.setUsername(email);
         newUser.setProfile(profile);
+        newUser.setProvider("google");
         // Set other fields as necessary (e.g., role, password, etc.)
         return userRepo.save(newUser);
     }
