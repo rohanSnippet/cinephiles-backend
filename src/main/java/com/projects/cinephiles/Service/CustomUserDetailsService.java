@@ -9,10 +9,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static org.springframework.security.core.userdetails.User.withUsername;
 
 @Service
@@ -29,7 +25,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        System.out.println("Fetched user: " + user);
 
         UserBuilder builder = withUsername(user.getUsername());
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
@@ -37,9 +32,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
             // This means the user is an OAuth2 user, provide a dummy password
-            builder.password("DUMMY_PASSWORD"); // Use a constant or dummy password for OAuth2 users
+            builder.password("DUMMY_PASSWORD");
         } else {
-            // Normal user (non-OAuth2) with a valid password
+
             builder.password(user.getPassword());
         }
 
