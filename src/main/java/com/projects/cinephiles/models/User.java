@@ -33,7 +33,7 @@ public class User implements UserDetails {
     @Column( name = "Mobile")
     private String phone;
 
-    @Column
+    @Column(nullable = true)
     private String password;
 
     private String profile;

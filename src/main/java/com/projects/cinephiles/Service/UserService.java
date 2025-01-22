@@ -63,12 +63,13 @@ public class UserService {
 
         // Create and save new user in your database
         User newUser = new User();
-        if (username == null) throw new AssertionError();
+        if (username == null) throw new AssertionError("Username is null");
         newUser.setFirstName(username.split(" ")[0]);
         newUser.setLastName(username.split(" ")[1]);
         newUser.setUsername(email);
         newUser.setProfile(profile);
         newUser.setProvider("google");
+        newUser.setRole(Role.USER);
         // Set other fields as necessary (e.g., role, password, etc.)
         return userRepo.save(newUser);
     }

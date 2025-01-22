@@ -24,15 +24,24 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        System.out.println("Fetched user: " + user);
 
         UserBuilder builder = withUsername(user.getUsername());
-        builder.password(user.getPassword());
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
         builder.authorities(authority);
+
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            // This means the user is an OAuth2 user, provide a dummy password
+            builder.password("DUMMY_PASSWORD"); // Use a constant or dummy password for OAuth2 users
+        } else {
+            // Normal user (non-OAuth2) with a valid password
+            builder.password(user.getPassword());
+        }
 
         return builder.build();
     }
