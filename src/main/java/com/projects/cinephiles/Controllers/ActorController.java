@@ -16,7 +16,6 @@ public class ActorController {
     @Autowired
     private ScrapeService scrapeService;
 
-
     @PostMapping("/scrape")
     public ProfilesUrl scrapeActor(@RequestBody Map<String, String> cast) throws Exception {
         return ScrapeService.scrapeActor(cast);
