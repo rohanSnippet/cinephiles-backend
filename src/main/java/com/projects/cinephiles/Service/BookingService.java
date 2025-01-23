@@ -59,8 +59,10 @@ public class BookingService {
             // Check if any requested seats are already locked
             for (String seatId : lockedSeatsRequest.getSeatsId()) {
                 if (alreadyLockedSeats.contains(seatId)) {
+                    System.out.println(seatId+" is already locked");
                     return false; // Return false if any seat is already locked
                 }
+
             }
 
             // Proceed to lock the seats as none of them are locked
@@ -73,21 +75,19 @@ public class BookingService {
 
             // Save the LockedSeats instance
             lockedSeatsRepo.save(lockedSeats);
-
+            System.out.println("All seats locked successfully.");
             return true; // Locking was successful
         } else {
             return false; // Show not found
         }
     }
 
-
-
     @Transactional
-    @Scheduled(fixedRate = 20000) // Runs every 20 seconds
+    @Scheduled(fixedRate = 60000) // Runs every 60 seconds
     public void releaseExpiredSeats() {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        List<Show> shows = showRepo.findAll(); // Ensure it fetches shows with active sessions
-
+        List<Show> shows = showRepo.findActiveShows(); // Ensure it fetches shows with active sessions
+        //System.out.println(shows);
         for (Show show : shows) {
             // Find the expired locked seats
             List<LockedSeats> expiredSeats = show.getLockedSeats().stream()
@@ -136,8 +136,8 @@ public class BookingService {
 
 
     @Transactional
-    public ResponseEntity<String> unlockSeats(Long showId, String user) {
-        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (showId, user);
+    public ResponseEntity<String> unlockSeats(Long showId, String username) {
+        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (showId, username);
 
         // If locked seats do not exist, return a not found response
         if (!optionalLockedSeats.isPresent()) {
@@ -168,6 +168,7 @@ public class BookingService {
             Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser());
             LockedSeats lockedSeats = optionalLockedSeats.get();
             Show show = optionalShow.get();
+            System.out.println("Screen for the show"+show.getScreen());
             Screen screen = show.getScreen();
             Booking newBooking = new Booking();
             newBooking.setTheatreId(show.getTId());
@@ -187,6 +188,8 @@ public class BookingService {
             order.setShow(show);
             order.setScreenName(screen.getSname());
             User opUser = userRepo.getUserByUsername(lockedSeats.getUser());
+            System.out.println("User for order"+opUser);
+
             order.setUser(opUser);
             order.setUsername(lockedSeats.getUser());
             order.setTotalAmount(lockedSeats.getPrice()*lockedSeats.getSeatsId().size());
