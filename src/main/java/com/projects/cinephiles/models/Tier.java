@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class Tier {
     @ManyToOne
     @JoinColumn(name = "screen_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
     private Screen screen;
 }
 

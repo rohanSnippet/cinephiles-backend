@@ -8,9 +8,11 @@ import com.projects.cinephiles.Repo.ShowRepo;
 import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -152,6 +154,22 @@ public class ShowService {
         showRepo.save(show);
     }
 
+    //Time comversion to be done "07:00"
+    @Transactional
+    @Scheduled(fixedRate = 60000) // Runs every 60 seconds
+    public void deactivateExpiredShows() {
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println("shows ");
+        // Fetch shows where the start time has passed and are still active
+        List<Show> expiredShows = showRepo.findAll().stream()
+                .filter(show -> show.isActive() && LocalDateTime.parse(show.getStart()).isBefore(now))
+                .toList();
+        System.out.println(expiredShows);
+        for (Show show : expiredShows) {
+            show.setActive(false); // Deactivate the show
+            showRepo.save(show); // Persist changes
+        }
+    }
 
     public void deleteShowById(Long sId) {
         if (!showRepo.existsById(sId)) {
@@ -160,5 +178,7 @@ public class ShowService {
         showRepo.deleteById(sId);
 
     }
+
+
 }
 

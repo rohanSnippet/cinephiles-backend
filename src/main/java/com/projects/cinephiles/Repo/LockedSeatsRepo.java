@@ -12,6 +12,6 @@ import java.util.Optional;
 @Repository
 public interface LockedSeatsRepo extends JpaRepository<LockedSeats,Long> {
 
-    Optional<LockedSeats> findByShowIdAndUser(Long showId, String user);
+    Optional<LockedSeats> findByShowIdAndUser(Long showId, String username);
 
     List<LockedSeats> findByShowAndExpirationTimeAfter(Show show, LocalDateTime expirationTime);}
