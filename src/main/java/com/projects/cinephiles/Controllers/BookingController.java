@@ -46,6 +46,7 @@ public class BookingController {
   // 5. Unlock Seats on Cancellation
   @DeleteMapping("/unlock-seats")
   public ResponseEntity<String> unlockSeats(@RequestParam Long showId,@RequestParam String user) {
+    System.out.println("unlock seats is called");
     return bookingService.unlockSeats(showId, user );
   }
 

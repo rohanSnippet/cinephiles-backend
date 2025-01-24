@@ -83,11 +83,12 @@ public class BookingService {
     }
 
     @Transactional
-    @Scheduled(fixedRate = 60000) // Runs every 60 seconds
+    //@Scheduled(fixedRate = 60000) // Runs every 60 seconds
+    @Scheduled(cron = "0 */1 * * * *")
     public void releaseExpiredSeats() {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         List<Show> shows = showRepo.findActiveShows(); // Ensure it fetches shows with active sessions
-        //System.out.println(shows);
+        //System.out.println("Active shows:"+shows);
         for (Show show : shows) {
             // Find the expired locked seats
             List<LockedSeats> expiredSeats = show.getLockedSeats().stream()
@@ -95,7 +96,7 @@ public class BookingService {
                     .collect(Collectors.toList());
 
             // Log the expired seats for debugging purposes
-            System.out.println("Expired seats: " + expiredSeats);
+          //  System.out.println("Expired seats: " + expiredSeats);
 
             // Remove expired seats from the show
             show.getLockedSeats().removeAll(expiredSeats);
@@ -108,8 +109,6 @@ public class BookingService {
         }
     }
 
-
-
     @Transactional
     public long getRemainingTime(Long showId, String user) {
         LocalDateTime now = LocalDateTime.now();
@@ -120,6 +119,7 @@ public class BookingService {
         // If locked seats exist, calculate the remaining time
         if (optionalLockedSeats.isPresent()) {
             LockedSeats lockedSeats = optionalLockedSeats.get();
+            System.out.println("LockedSeats"+lockedSeats);
             LocalDateTime expirationTime = lockedSeats.getExpirationTime();
 
 
@@ -145,6 +145,7 @@ public class BookingService {
         }
 
         LockedSeats lockedSeats = optionalLockedSeats.get();
+        System.out.println("The locked seats are :"+lockedSeats);
         LocalDateTime expirationTime = lockedSeats.getExpirationTime();
 
         // Check if the expiration time has passed
