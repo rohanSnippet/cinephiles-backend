@@ -5,6 +5,7 @@ import com.projects.cinephiles.Repo.MovieRepo;
 import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
+import com.projects.cinephiles.models.Trailers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,13 @@ public class MovieService {
             }
         }
 
+
+    List<Trailers> trailers = movie.getTrailers();
+    if (trailers != null) {
+        for (Trailers trailer : trailers) {
+            trailer.setMovie(movie);
+        }
+    }
         // Save the movie entity, which will cascade and save the associated crew members
         return movieRepo.save(movie);
     }
@@ -131,7 +139,10 @@ public class MovieService {
 
         // Update trailers and cast
         existingMovie.getTrailers().clear();
-        existingMovie.getTrailers().putAll(updatedMovie.getTrailers());
+        updatedMovie.getTrailers().forEach(trailer ->{
+            trailer.setMovie(existingMovie);
+            existingMovie.getTrailers().add(trailer);
+        });
 
         existingMovie.getCast().clear();
         existingMovie.getCast().putAll(updatedMovie.getCast());

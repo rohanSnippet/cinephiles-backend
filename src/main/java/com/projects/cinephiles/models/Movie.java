@@ -54,17 +54,18 @@ public class Movie {
     private Map<String, String> cast;
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
-
     private List<CrewMember> crew;
 
     private String poster;
     private String banner;
 
-    @ElementCollection
-    @CollectionTable(name = "movie_trailers", joinColumns = @JoinColumn(name = "movie_id"))
-    @MapKeyColumn(name = "language")
-    @Column(name = "trailer_link")
-    private Map<String, String> trailers;
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL , orphanRemoval = true)
+    private List<Trailers> trailers;
+//    @ElementCollection
+//    @CollectionTable(name = "movie_trailers", joinColumns = @JoinColumn(name = "movie_id"))
+//    @MapKeyColumn(name = "language")
+//    @Column(name = "trailer_link")
+//    private Map<String, String> trailers;
 
     private LocalDate releaseDate;
     private Boolean bookingOpen;

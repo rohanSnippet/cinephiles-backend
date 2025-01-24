@@ -12,7 +12,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -154,17 +157,16 @@ public class ShowService {
         showRepo.save(show);
     }
 
-    //Time comversion to be done "07:00"
     @Transactional
     @Scheduled(fixedRate = 60000) // Runs every 60 seconds
     public void deactivateExpiredShows() {
         LocalDateTime now = LocalDateTime.now();
-        System.out.println("shows ");
+
         // Fetch shows where the start time has passed and are still active
         List<Show> expiredShows = showRepo.findAll().stream()
-                .filter(show -> show.isActive() && LocalDateTime.parse(show.getStart()).isBefore(now))
+                .filter(show -> show.isActive() && LocalDateTime.of(LocalDate.parse(show.getShowDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd")), LocalTime.parse(show.getStart(),DateTimeFormatter.ofPattern("HH:mm"))).isBefore(now))
                 .toList();
-        System.out.println(expiredShows);
+        System.out.println("Expired shows"+expiredShows);
         for (Show show : expiredShows) {
             show.setActive(false); // Deactivate the show
             showRepo.save(show); // Persist changes
