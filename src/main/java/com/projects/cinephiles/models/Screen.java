@@ -1,12 +1,16 @@
 package com.projects.cinephiles.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
@@ -14,11 +18,13 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Table(name = "screens")
-public class Screen {
+public class Screen{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private static final long serialVersionUID = 1L;
 
     private String sname;
 
@@ -32,8 +38,8 @@ public class Screen {
     @JsonIgnore
     private List<Show> shows;
 
+    @JsonIgnoreProperties({"screen", "theatre"})
     @OneToMany(mappedBy = "screen", cascade = CascadeType.ALL, orphanRemoval = true)
-
     private List<Tier> tiers;
 
     // Add soft delete flag if needed

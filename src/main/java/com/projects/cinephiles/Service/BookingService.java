@@ -1,7 +1,6 @@
 package com.projects.cinephiles.Service;
 
 import com.projects.cinephiles.DTO.LockedSeatsRequests;
-import com.projects.cinephiles.DTO.ScreenDTO;
 import com.projects.cinephiles.Repo.*;
 import com.projects.cinephiles.models.*;
 import jakarta.transaction.Transactional;
@@ -306,13 +305,6 @@ public class BookingService {
         Show show = optionalShow.get();
         Screen screen = show.getScreen();
 
-        // Convert Screen entity to DTO
-        ScreenDTO screenDTO = new ScreenDTO(
-                screen.getId(),
-                screen.getSname(),
-                screen.isActive()
-        );
-        System.out.println("*****************Screen DTO is : "+screenDTO);
         // Fetch the locked seats for the user
         Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser(
                 lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser()
@@ -329,7 +321,6 @@ public class BookingService {
         if (lockedSeats.getExpirationTime().isBefore(now)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The locked seats have expired.");
         }
-
         // Create a new booking
         Booking newBooking = new Booking();
         newBooking.setTheatreId(show.getTId());
@@ -354,8 +345,8 @@ public class BookingService {
         order.setBookingTime(LocalTime.now());
         order.setBookingDate(LocalDate.now());
         order.setShowId(show.getId());
-        order.setScreenName(screenDTO.getSname()); // Use DTO instead of entity
-        System.out.println("The screen name is :"+screenDTO.getSname());
+        order.setScreenName(screen.getSname()); // Use DTO instead of entity
+        System.out.println("The screen name is :"+screen.getSname());
         User opUser = userRepo.getUserByUsername(lockedSeats.getUser());
         if (opUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
