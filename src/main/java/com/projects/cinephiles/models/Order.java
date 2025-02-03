@@ -1,11 +1,13 @@
 package com.projects.cinephiles.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -33,7 +35,7 @@ public class Order {
     @Column(name = "show_id")
     private String poster;
     @Column(name = "show_data")
-    private Show show;
+    private Long showId;
     private String screenName;
     private String theatre;
     @Column(name = "seats_booked")
