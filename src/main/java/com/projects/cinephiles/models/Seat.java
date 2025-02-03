@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @AllArgsConstructor
@@ -28,5 +29,6 @@ public class Seat {
     @ManyToOne
     @JoinColumn(name = "tier_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
     private Tier tier;
 }
