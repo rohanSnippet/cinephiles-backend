@@ -1,5 +1,6 @@
 package com.projects.cinephiles.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.projects.cinephiles.Enum.ShowStatus;
 import jakarta.persistence.*;
