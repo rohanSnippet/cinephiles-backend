@@ -4,6 +4,7 @@ import com.projects.cinephiles.Service.ShowService;
 import com.projects.cinephiles.models.Show;
 import com.projects.cinephiles.models.ShowRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,12 @@ public class ShowController {
         return ResponseEntity.ok(shows);
     }
 
+    @DeleteMapping("/delete-show/{sId}")
+    public ResponseEntity<Void> deleteShow(@PathVariable Long sId) {
+        // Perform the deletion logic (service call, etc.)
+        showService.deleteShowById(sId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 
 
 }
