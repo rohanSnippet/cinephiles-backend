@@ -33,17 +33,6 @@
 	</properties>
 	<dependencies>
 		<dependency>
-			<groupId>com.cashfree.pg.java</groupId>
-			<artifactId>cashfree_pg</artifactId>
-			<version>5.0.0-beta-5</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>4.10.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
@@ -111,7 +100,6 @@
 			<scope>runtime</scope>
 		</dependency>
 
-
 	</dependencies>
 
 	<build>
@@ -139,5 +127,12 @@
 			</plugin>
 		</plugins>
 	</build>
+	<repositories>
+		<repository>
+			<id>cashfree-github</id>
+			<url>https://maven.pkg.github.com/cashfree/cashfree-pg-java-sdk</url>
+		</repository>
+	</repositories>
+
 
 </project>
