@@ -50,7 +50,7 @@ public class BookingService {
 
             // Check for already locked seats for the show
             List<LockedSeats> existingLockedSeats = lockedSeatsRepo.findByShowAndExpirationTimeAfter(show, LocalDateTime.now());
-
+            //List<LockedSeats> existingLockedSeats = lockedSeatsRepo.findActiveLockedSeatsForShow(show, LocalDateTime.now());
             // Get a list of seat IDs that are already locked and not expired
             Set<String> alreadyLockedSeats = existingLockedSeats.stream()
                     .flatMap(lockedSeats -> lockedSeats.getSeatsId().stream())
@@ -100,7 +100,7 @@ public class BookingService {
 
             // Remove expired seats from the show
             show.getLockedSeats().removeAll(expiredSeats);
-
+            System.out.println("Unlocked all expired lockedSeats");
             // Delete expired seats from the database
             lockedSeatsRepo.deleteAll(expiredSeats);
 

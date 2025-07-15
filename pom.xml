@@ -35,7 +35,7 @@
 		<dependency>
 			<groupId>com.cashfree.pg.java</groupId>
 			<artifactId>cashfree_pg</artifactId>
-			<version>4.3.6</version>
+			<version>5.0.0-beta-5</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
