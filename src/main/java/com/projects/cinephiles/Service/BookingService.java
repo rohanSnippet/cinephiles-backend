@@ -162,6 +162,7 @@ public class BookingService {
     @Transactional
     public ResponseEntity<String> bookSeats(LockedSeatsRequests lockedSeatsRequests) {
         // Fetch the show details
+        System.out.println("book seats called ... ");
         Optional<Show> optionalShow = showRepo.findById(lockedSeatsRequests.getShowId());
         if (!optionalShow.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No shows found.");
@@ -207,10 +208,15 @@ public class BookingService {
         // Create a new order
         Order order = new Order();
         order.setSeats(String.join(",", new ArrayList<>(lockedSeats.getSeatsId())));
+        order.setBookingId(newBooking.getId());
         order.setBookingTime(LocalTime.now());
         order.setBookingDate(LocalDate.now());
         order.setShowId(show.getId());
-        order.setScreenName(screen.getSname()); // Use DTO instead of entity
+        order.setScreenName(screen.getSname());
+        order.setMovie(show.getMovie().getTitle());// Use DTO instead of entity
+        order.setStatus("Booked");
+        order.setTheatre(theatre.getId());
+        order.setPoster(show.getMovie().getPoster());
         System.out.println("The screen name is :"+screen.getSname());
         User opUser = userRepo.getUserByUsername(lockedSeats.getUser());
         if (opUser == null) {

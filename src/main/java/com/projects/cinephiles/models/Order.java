@@ -27,17 +27,18 @@ public class Order {
     @JoinColumn(name = "user_id")
     @JsonIgnore
     private User user;
-    private String bookingId;
+    private Long bookingId;
     @Column(name = "username")
     private String username;
     private String status;
+    private String movie;
 
     @Column(name = "show_id")
     private String poster;
     @Column(name = "show_data")
     private Long showId;
     private String screenName;
-    private String theatre;
+    private Long theatre;
     @Column(name = "seats_booked")
     private String seats;
     private Double totalAmount;

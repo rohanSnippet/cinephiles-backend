@@ -20,8 +20,8 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.createOrder(request));
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<?> verifyPayment(@RequestParam String orderId) {
+    @GetMapping("/verify/{orderId}")
+    public ResponseEntity<?> verifyPayment(@PathVariable String orderId) {
         System.out.println("/verify called ......");
         return ResponseEntity.ok(paymentService.verifyPayment(orderId));
     }

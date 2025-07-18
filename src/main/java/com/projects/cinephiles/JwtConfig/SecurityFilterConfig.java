@@ -41,7 +41,7 @@ public class SecurityFilterConfig {
             return security.csrf(csrf -> csrf.disable())
                     .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
                     .authorizeHttpRequests(auth -> auth
-                            .requestMatchers("/auth/**", "/oauth2/**", "/movie/**", "/show/**", "/theatre/get-theatres/by-location", "/actor/**", "/").permitAll()
+                            .requestMatchers("/auth/**", "/oauth2/**", "/movie/**", "/show/**", "/theatre/get-theatres/by-location", "/actor/**", "/",  "/api/payment/verify/**").permitAll()
                             .anyRequest().authenticated())
                     .oauth2Login(oauth2 -> oauth2
                             .successHandler(oAuth2SuccessHandler))  // Handle OAuth2 login success
