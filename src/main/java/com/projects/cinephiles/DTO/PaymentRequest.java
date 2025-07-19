@@ -9,6 +9,6 @@ public class PaymentRequest {
         // Movie identifier
     private Long showId;
     private Double amount;// Show identifier
-    private List<String> seatIds;  // Seats selected
+    private List<String> seatsIds;  // Seats selected
 }
 

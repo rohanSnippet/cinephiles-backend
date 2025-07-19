@@ -14,16 +14,11 @@ public class PaymentOrder {
 
     @Id
     private String orderId;
-
     private Long userId;
     private Long movieId;
     private Long showId;
-
-    @ElementCollection
-    private List<String> seatIds;
-
+    private String seatIds;
     private double amount;
-
     private String status; // CREATED, PAID, FAILED
     private LocalDateTime createdAt;
 }

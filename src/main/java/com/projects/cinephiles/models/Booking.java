@@ -22,6 +22,8 @@ public class Booking {
     @JsonIgnore
     private Show show;
 
+    @Column(name = "bookingID")
+    private String bookingID;
     private String seatsIds;
     private Double totalAmount; //send
     @Column(name = "theatre")

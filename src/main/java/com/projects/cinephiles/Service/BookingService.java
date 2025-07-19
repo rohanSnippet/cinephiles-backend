@@ -10,10 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.security.SecureRandom;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -155,9 +153,8 @@ public class BookingService {
 
         // Delete the locked seats
         lockedSeatsRepo.delete(lockedSeats);
-        return ResponseEntity.ok("Seats Unlocked");
+        return ResponseEntity.ok("Seats unlocked using unlock seats....");
     }
-
 
     @Transactional
     public ResponseEntity<String> bookSeats(LockedSeatsRequests lockedSeatsRequests) {
@@ -191,6 +188,7 @@ public class BookingService {
         Booking newBooking = new Booking();
         newBooking.setTheatreId(show.getTId());
         newBooking.setShow(show);
+        newBooking.setBookingID(lockedSeatsRequests.getBookingID());
         newBooking.setSeatsIds(String.join(",", new ArrayList<>(lockedSeats.getSeatsId())));
         newBooking.setUser(lockedSeats.getUser());
 

@@ -4,9 +4,7 @@ import com.projects.cinephiles.DTO.BookingSuccessResponse;
 import com.projects.cinephiles.DTO.LockedSeatsRequests;
 import com.projects.cinephiles.DTO.PaymentRequest;
 import com.projects.cinephiles.DTO.PaymentResponse;
-import com.projects.cinephiles.Repo.PaymentRepo;
-import com.projects.cinephiles.Repo.ShowRepo;
-import com.projects.cinephiles.Repo.UserRepo;
+import com.projects.cinephiles.Repo.*;
 import com.projects.cinephiles.models.*;
 import lombok.RequiredArgsConstructor;
 
@@ -18,8 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -50,22 +51,57 @@ public class PaymentService {
     @Autowired
     private ShowRepo showRepo;
 
+    @Autowired
+    private MovieRepo movieRepo;
+
+    @Autowired
+    private ScreenRepository screenRepo;
+
+    @Autowired
+    private TheatreRepo theatreRepo;
+
+    @Autowired
+    private OrderRepo orderRepo;
+
+    @Autowired
+    private BookingRepository bookingRepo;
+
+    private static final String UPPERCASE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final SecureRandom random = new SecureRandom();
+    public static String generateUniqueBookingId() {
+        int length = 3 + random.nextInt(3); // Random part length 3 to 5
+        StringBuilder randomPart = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            randomPart.append(UPPERCASE_ALPHABET.charAt(random.nextInt(UPPERCASE_ALPHABET.length())));
+        }
+        // Add last 5 digits of current time in milliseconds to ensure uniqueness
+        String timePart = String.valueOf(Instant.now().toEpochMilli()).substring(8);
+        return randomPart + timePart;
+    }
+
 
     public PaymentResponse createOrder(PaymentRequest request) {
         // 3. Create orderId
+        System.out.println(request);
         String orderId = request.getUsername().substring(0, 4) + System.currentTimeMillis();
         User user = userRepo.getUserByUsername(request.getUsername());
         if (user == null) {
             throw new IllegalArgumentException("User with username " + request.getUsername() + " not found.");
         }
+         Optional<Show> opshow = showRepo.findById(request.getShowId());
+        if(opshow.isEmpty()) return null;
+        Show show = opshow.get();
 
         System.out.println(user + " is the user ....");
         // 4. Save order in DB
         PaymentOrder order = new PaymentOrder();
         order.setOrderId(orderId);
         order.setUserId(user.getId());
+        order.setMovieId(show.getMId());
         order.setShowId(request.getShowId());
-        order.setSeatIds(request.getSeatIds());
+        System.out.println("seats are : "+String.join(",", request.getSeatsIds()));
+        if(request.getSeatsIds() == null) return null;
+        order.setSeatIds(String.join(",", request.getSeatsIds()));
         order.setAmount(request.getAmount());
         order.setStatus("CREATED");
         order.setCreatedAt(LocalDateTime.now());
@@ -147,9 +183,27 @@ public class PaymentService {
         return namePart + "_" + userId;
     }
 
-    public Map<String, Object> verifyPayment(String orderId) {
+    public BookingSuccessResponse verifyPayment(String orderId) {
+        System.out.println("Order Id is : "+orderId);
         PaymentOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        Optional<Movie> opmovie = movieRepo.findById(order.getMovieId());
+        if(opmovie.isEmpty()) return null;
+        Movie movie = opmovie.get();
+
+        Optional<Show> opshow = showRepo.findById(order.getShowId());
+        if(opshow.isEmpty()) return null;
+        Show show = opshow.get();
+
+        Optional<Screen> opscreen = screenRepo.findById(show.getSId());
+        if(opscreen.isEmpty()) return null;
+        Screen screen = opscreen.get();
+
+        Optional<Theatre> optheatre = theatreRepo.findById(screen.getTheatre().getId());
+        if(optheatre.isEmpty()) return null;
+        Theatre theatre = optheatre.get();
+
 
         // Call Cashfree Get Order API
         String url = cashfreeApiUrl + "/pg/orders/" + orderId;
@@ -171,20 +225,30 @@ public class PaymentService {
                 orderRepository.save(order);
                 User user = userRepo.getUserById(order.getUserId());
                 LockedSeatsRequests lockedSeatsRequests = new LockedSeatsRequests();
-                lockedSeatsRequests.setSeatsId(order.getSeatIds());
+                lockedSeatsRequests.setSeatsId(Arrays.asList(order.getSeatIds().split(",")));
                 lockedSeatsRequests.setUser(user.getUsername());
+                String bId = generateUniqueBookingId();
+                System.out.println("bId is : "+ bId);
+                lockedSeatsRequests.setBookingID(bId);
                 lockedSeatsRequests.setShowId(order.getShowId());
                 bookingService.bookSeats(lockedSeatsRequests);
 
-                System.out.println("success called ....");
+               Optional<Booking> opbooking = bookingRepo.findByBookingID(bId);
+               if(opbooking.isEmpty()) return null;
+               Booking booking = opbooking.get();
+                System.out.println(" Fetched Booking Id from bookings : "+ booking.getBookingID());
 
-
-                return Map.of("success", true, "message", "Payment successful. Seats booked.");
+                return new BookingSuccessResponse(true,
+                        "Payment made successfully.", movie.getTitle(),
+                        movie.getPoster(),booking.getBookingID(), String.valueOf(movie.getCertification()), theatre.getName(),theatre.getAddress(),
+                        theatre.getCity(), screen.getSname(), order.getSeatIds(), show.getFormat(),show.getStart(),show.getShowDate());
             } else {
-                return Map.of("success", false, "message", "Payment status: " + status);
+                return new BookingSuccessResponse(false, "Payment unsuccessful", null, null, null, null, null, null, null, null, null, null, null, null);
             }
         } else {
             throw new RuntimeException("Failed to verify payment with Cashfree");
         }
     }
+
+
 }

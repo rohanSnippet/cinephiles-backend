@@ -9,5 +9,6 @@ public class LockedSeatsRequests {
     private List<String> seatsId; // List of seat IDs to be locked
     private Double price;          // Price for the locked seats
     private String user;          // User's email or identifier
-    private Long showId;          // ID of the show for which seats are being locked
+    private Long showId;
+    private String bookingID;// ID of the show for which seats are being locked
 }
