@@ -24,8 +24,15 @@ public class Booking {
 
     @Column(name = "bookingID")
     private String bookingID;
+
+    private String tierName;
     private String seatsIds;
+    @Column(name = "totalAmount")
     private Double totalAmount; //send
+    @Column(name = "baseAmount")
+    private Double baseAmount;
+    private Double cgst;
+    private Double sgst;
     @Column(name = "theatre")
     private Long theatreId;
     @Column(name = "user")

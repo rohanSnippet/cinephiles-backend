@@ -10,5 +10,8 @@ public class PaymentRequest {
     private Long showId;
     private Double amount;// Show identifier
     private List<String> seatsIds;  // Seats selected
+    private String tierName;
+    private Double cgst;
+    private Double sgst;
 }
 

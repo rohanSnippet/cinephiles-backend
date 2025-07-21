@@ -68,6 +68,9 @@ public class BookingService {
             lockedSeats.setShow(show);
             lockedSeats.setSeatsId(lockedSeatsRequest.getSeatsId());
             lockedSeats.setPrice(lockedSeatsRequest.getPrice());
+            lockedSeats.setTierName(lockedSeatsRequest.getTierName());
+            lockedSeats.setCgst(lockedSeatsRequest.getCgst());
+            lockedSeats.setSgst(lockedSeatsRequest.getSgst());
             lockedSeats.setUser(lockedSeatsRequest.getUser());
             lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(2)); // Set expiration time if needed
 
@@ -191,6 +194,11 @@ public class BookingService {
         newBooking.setBookingID(lockedSeatsRequests.getBookingID());
         newBooking.setSeatsIds(String.join(",", new ArrayList<>(lockedSeats.getSeatsId())));
         newBooking.setUser(lockedSeats.getUser());
+        newBooking.setBaseAmount(lockedSeatsRequests.getPrice());
+        newBooking.setTotalAmount(lockedSeatsRequests.getPrice()+lockedSeatsRequests.getCgst()+lockedSeatsRequests.getSgst());
+        newBooking.setCgst(lockedSeatsRequests.getCgst());
+        newBooking.setSgst(lockedSeatsRequests.getSgst());
+        newBooking.setTierName(lockedSeatsRequests.getTierName());
 
         // Fetch the theatre and owner details
         Optional<Theatre> optheatre = theatreRepo.findById(show.getTId());

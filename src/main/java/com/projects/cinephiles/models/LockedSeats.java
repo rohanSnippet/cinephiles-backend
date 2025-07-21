@@ -28,8 +28,10 @@ public class LockedSeats {
     @CollectionTable(name = "locked_seats_details", joinColumns = @JoinColumn(name = "locked_seat_id"))
     @Column(name = "seats")
     private List<String> seatsId;
-
+    private String tierName;
     private Double price;
+    private Double cgst;
+    private Double sgst;
     private LocalDateTime expirationTime;
     private String user;
 

@@ -99,6 +99,9 @@ public class PaymentService {
         order.setUserId(user.getId());
         order.setMovieId(show.getMId());
         order.setShowId(request.getShowId());
+        order.setTierName(request.getTierName());
+        order.setCgst(request.getCgst());
+        order.setSgst(request.getSgst());
         System.out.println("seats are : "+String.join(",", request.getSeatsIds()));
         if(request.getSeatsIds() == null) return null;
         order.setSeatIds(String.join(",", request.getSeatsIds()));
@@ -227,6 +230,10 @@ public class PaymentService {
                 LockedSeatsRequests lockedSeatsRequests = new LockedSeatsRequests();
                 lockedSeatsRequests.setSeatsId(Arrays.asList(order.getSeatIds().split(",")));
                 lockedSeatsRequests.setUser(user.getUsername());
+                lockedSeatsRequests.setPrice(order.getAmount());
+                lockedSeatsRequests.setCgst(order.getCgst());
+                lockedSeatsRequests.setSgst(order.getSgst());
+                lockedSeatsRequests.setTierName(order.getTierName());
                 String bId = generateUniqueBookingId();
                 System.out.println("bId is : "+ bId);
                 lockedSeatsRequests.setBookingID(bId);
@@ -240,10 +247,12 @@ public class PaymentService {
 
                 return new BookingSuccessResponse(true,
                         "Payment made successfully.", movie.getTitle(),
-                        movie.getPoster(),booking.getBookingID(), String.valueOf(movie.getCertification()), theatre.getName(),theatre.getAddress(),
-                        theatre.getCity(), screen.getSname(), order.getSeatIds(), show.getFormat(),show.getStart(),show.getShowDate());
+                        movie.getPoster(),booking.getBookingID(), String.valueOf(movie.getCertification()),
+                        theatre.getName(),theatre.getAddress(), theatre.getCity(), screen.getSname(),
+                        order.getTierName(), order.getSeatIds(), show.getFormat(),show.getStart(),
+                        show.getShowDate(), order.getAmount(), order.getCgst(), order.getSgst());
             } else {
-                return new BookingSuccessResponse(false, "Payment unsuccessful", null, null, null, null, null, null, null, null, null, null, null, null);
+                return new BookingSuccessResponse(false, "Payment unsuccessful", null, null, null, null, null, null, null, null, null, null,null,null, null, null, null, null);
             }
         } else {
             throw new RuntimeException("Failed to verify payment with Cashfree");

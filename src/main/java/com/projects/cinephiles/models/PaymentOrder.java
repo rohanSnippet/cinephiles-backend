@@ -18,7 +18,11 @@ public class PaymentOrder {
     private Long movieId;
     private Long showId;
     private String seatIds;
-    private double amount;
+    private String tierName;
+    private Double amount;
+    private Double cgst;
+    private Double sgst;
     private String status; // CREATED, PAID, FAILED
     private LocalDateTime createdAt;
+
 }

@@ -18,8 +18,12 @@ public class BookingSuccessResponse {
   private String location;
   private String theatreCity;
   private String screenName;
+  private String tierName;
   private String seatIds;
   private String showFormat;
   private String showTime;
   private String showDate;
+  private Double amount;
+  private Double cgst;
+  private Double sgst;
 }
