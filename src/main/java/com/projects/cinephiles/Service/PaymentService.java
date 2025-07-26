@@ -129,7 +129,7 @@ public class PaymentService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("order_id", orderId);
         payload.put("order_currency", "INR");
-        payload.put("order_amount", request.getAmount());
+        payload.put("order_amount", request.getAmount()+request.getSgst()+request.getCgst());
 
         System.out.println(payload+" Payload set.....");
 

@@ -72,7 +72,7 @@ public class BookingService {
             lockedSeats.setCgst(lockedSeatsRequest.getCgst());
             lockedSeats.setSgst(lockedSeatsRequest.getSgst());
             lockedSeats.setUser(lockedSeatsRequest.getUser());
-            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(2)); // Set expiration time if needed
+            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(1)); // Set expiration time if needed
 
             // Save the LockedSeats instance
             lockedSeatsRepo.save(lockedSeats);
@@ -150,9 +150,9 @@ public class BookingService {
         LocalDateTime expirationTime = lockedSeats.getExpirationTime();
 
         // Check if the expiration time has passed
-        if (LocalDateTime.now().isAfter(expirationTime)) {
+/*        if (LocalDateTime.now().isAfter(expirationTime)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cannot unlock seats, the time has expired.");
-        }
+        }*/
 
         // Delete the locked seats
         lockedSeatsRepo.delete(lockedSeats);
