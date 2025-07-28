@@ -72,7 +72,7 @@ public class BookingService {
             lockedSeats.setCgst(lockedSeatsRequest.getCgst());
             lockedSeats.setSgst(lockedSeatsRequest.getSgst());
             lockedSeats.setUser(lockedSeatsRequest.getUser());
-            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(1)); // Set expiration time if needed
+            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(7)); // Set expiration time if needed
 
             // Save the LockedSeats instance
             lockedSeatsRepo.save(lockedSeats);
