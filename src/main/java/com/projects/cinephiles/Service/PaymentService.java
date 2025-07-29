@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -125,11 +127,11 @@ public class PaymentService {
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
         System.out.println(url+" called.....");
-
+        double roundedAmount = new BigDecimal(request.getAmount()).setScale(2, RoundingMode.HALF_UP).doubleValue();
         Map<String, Object> payload = new HashMap<>();
         payload.put("order_id", orderId);
         payload.put("order_currency", "INR");
-        payload.put("order_amount", request.getAmount()+request.getSgst()+request.getCgst());
+        payload.put("order_amount", roundedAmount);
 
         System.out.println(payload+" Payload set.....");
 
