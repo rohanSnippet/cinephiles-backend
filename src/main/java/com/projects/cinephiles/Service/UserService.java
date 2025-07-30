@@ -35,7 +35,7 @@ public class UserService {
         if (existingUser.isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+       if(user.getPassword() != null) user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(Role.USER);
         return userRepo.save(user);
     }

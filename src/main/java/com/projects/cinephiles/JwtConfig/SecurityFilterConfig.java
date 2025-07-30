@@ -2,6 +2,7 @@ package com.projects.cinephiles.JwtConfig;
 
 import com.projects.cinephiles.Config.CustomOAuth2SuccessHandler;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -12,14 +13,26 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
 @Configuration
-@AllArgsConstructor
+//@AllArgsConstructor
 @EnableMethodSecurity
 public class SecurityFilterConfig {
 
+    private String frontend;
     private JwtAuthenticationEntryPoint point;
     private JwtAuthenticationFilter filter;
     private CustomOAuth2SuccessHandler oAuth2SuccessHandler;
+
+    public SecurityFilterConfig(@Value("${frontend.return.url}") String frontend,
+                                JwtAuthenticationEntryPoint point,
+                                JwtAuthenticationFilter filter,
+                                CustomOAuth2SuccessHandler oAuth2SuccessHandler) {
+        this.frontend = frontend;
+        this.point = point;
+        this.filter = filter;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    }
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
 
@@ -64,7 +77,7 @@ public class SecurityFilterConfig {
     @Bean
     public CorsConfiguration corsConfiguration() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin("http://localhost:5173/"); // Allow this specific origin
+        corsConfiguration.addAllowedOrigin(frontend); // Allow this specific origin
         corsConfiguration.addAllowedMethod("*"); // Allow all methods
         corsConfiguration.addAllowedHeader("*"); // Allow all headers
         corsConfiguration.setAllowCredentials(true);

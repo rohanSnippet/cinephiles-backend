@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -19,8 +20,13 @@ import java.io.IOException;
 
 @Component
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
+
+    @Value("${frontend.return.url}")
+    private String frontendUrl;
+
     @Autowired
     private UserService userService;
+
     @Autowired
     private JwtHelper jwtHelper;
 
@@ -42,7 +48,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String jwtToken = jwtHelper.generateToken(oAuth2User);
         System.out.println("jwtToken in success handler : "+jwtToken);
         request.getSession().setAttribute("access-token", jwtToken);
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect(frontendUrl);
     }
 }
 
