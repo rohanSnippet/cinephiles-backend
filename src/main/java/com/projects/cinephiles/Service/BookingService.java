@@ -71,7 +71,7 @@ public class BookingService {
             lockedSeats.setTierName(lockedSeatsRequest.getTierName());
             lockedSeats.setCgst(lockedSeatsRequest.getCgst());
             lockedSeats.setSgst(lockedSeatsRequest.getSgst());
-            lockedSeats.setUser(lockedSeatsRequest.getUser());
+            lockedSeats.setUserEmail(lockedSeatsRequest.getUser());
             lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(7)); // Set expiration time if needed
 
             // Save the LockedSeats instance
@@ -111,11 +111,11 @@ public class BookingService {
     }
 
     @Transactional
-    public long getRemainingTime(Long showId, String user) {
+    public long getRemainingTime(Long showId, String userEmail) {
         LocalDateTime now = LocalDateTime.now();
 
         // Fetch the LockedSeats object for the given showId and user
-        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser(showId, user);
+        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(showId, userEmail);
 
         // If locked seats exist, calculate the remaining time
         if (optionalLockedSeats.isPresent()) {
@@ -138,7 +138,7 @@ public class BookingService {
 
     @Transactional
     public ResponseEntity<String> unlockSeats(Long showId, String username) {
-        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser (showId, username);
+        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(showId, username);
 
         // If locked seats do not exist, return a not found response
         if (!optionalLockedSeats.isPresent()) {
@@ -172,7 +172,7 @@ public class BookingService {
         Screen screen = show.getScreen();
 
         // Fetch the locked seats for the user
-        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUser(
+        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(
                 lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser()
         );
 
@@ -193,7 +193,7 @@ public class BookingService {
         newBooking.setShow(show);
         newBooking.setBookingID(lockedSeatsRequests.getBookingID());
         newBooking.setSeatsIds(String.join(",", new ArrayList<>(lockedSeats.getSeatsId())));
-        newBooking.setUser(lockedSeats.getUser());
+        newBooking.setUserEmail(lockedSeats.getUserEmail());
         newBooking.setBaseAmount(lockedSeatsRequests.getPrice());
         newBooking.setTotalAmount(lockedSeatsRequests.getPrice()+lockedSeatsRequests.getCgst()+lockedSeatsRequests.getSgst());
         newBooking.setCgst(lockedSeatsRequests.getCgst());
@@ -224,13 +224,13 @@ public class BookingService {
         order.setTheatre(theatre.getId());
         order.setPoster(show.getMovie().getPoster());
         System.out.println("The screen name is :"+screen.getSname());
-        User opUser = userRepo.getUserByUsername(lockedSeats.getUser());
+        User opUser = userRepo.getUserByUsername(lockedSeats.getUserEmail());
         if (opUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
         }
 
         order.setUser(opUser);
-        order.setUsername(lockedSeats.getUser());
+        order.setUsername(lockedSeats.getUserEmail());
         order.setTotalAmount(lockedSeats.getPrice() * lockedSeats.getSeatsId().size());
         orderRepo.save(order);
 

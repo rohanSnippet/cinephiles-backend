@@ -34,8 +34,8 @@ public class Booking {
     private Double sgst;
     @Column(name = "theatre")
     private Long theatreId;
-    @Column(name = "user")
-    private String user; //send
+    @Column(name = "user_email")
+    private String userEmail; //send
     @Column(name = "owner")
     private Long owner; //send
 }

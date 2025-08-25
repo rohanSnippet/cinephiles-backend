@@ -33,6 +33,7 @@ public class LockedSeats {
     private Double cgst;
     private Double sgst;
     private LocalDateTime expirationTime;
-    private String user;
+    @Column(name = "user_email")
+    private String userEmail;
 
 }
