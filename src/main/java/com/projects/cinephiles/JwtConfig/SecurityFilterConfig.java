@@ -13,6 +13,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+
 
 @Configuration
 //@AllArgsConstructor
@@ -77,7 +79,7 @@ public class SecurityFilterConfig {
     @Bean
     public CorsConfiguration corsConfiguration() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin(frontend); // Allow this specific origin
+        corsConfiguration.setAllowedOrigins(Arrays.asList(frontend, "http://localhost:5173")); // Allow this specific origin
         corsConfiguration.addAllowedMethod("*"); // Allow all methods
         corsConfiguration.addAllowedHeader("*"); // Allow all headers
         corsConfiguration.setAllowCredentials(true);
