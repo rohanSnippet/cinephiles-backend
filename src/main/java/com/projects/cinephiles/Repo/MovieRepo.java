@@ -1,6 +1,7 @@
 package com.projects.cinephiles.Repo;
 
 import com.projects.cinephiles.models.Movie;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +22,7 @@ public interface MovieRepo extends JpaRepository<Movie,Long> {
             @Param("cities") List<String> cities,
             @Param("todayDate") String todayDate,
             @Param("currentTime") String currentTime);
+
+
+    List<Movie> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 }

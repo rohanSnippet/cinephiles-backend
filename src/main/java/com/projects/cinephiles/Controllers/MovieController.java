@@ -18,7 +18,6 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
-
     @GetMapping("/all-movies")
     public ResponseEntity<List<Movie>> getAllMovies(){
         return movieService.getAllMovies();
@@ -56,5 +55,12 @@ public class MovieController {
         return ResponseEntity.ok(movies);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Movie>> searchMovies(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "10") int limit) {
+        List<Movie> movies = movieService.searchMovies(query, limit);
+        return ResponseEntity.ok(movies);
+    }
 
 }

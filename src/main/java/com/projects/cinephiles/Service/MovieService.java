@@ -7,6 +7,8 @@ import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
 import com.projects.cinephiles.models.Trailers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,7 +40,7 @@ public class MovieService {
     }
 
     // Method to add a new movie
-@Transactional
+    @Transactional
     public Movie saveMovie(Movie movie) {
         List<CrewMember> crewMembers = movie.getCrew();
 
@@ -60,14 +62,10 @@ public class MovieService {
         return movieRepo.save(movie);
     }
 
-
-
-
     // Method to get a specific movie by its ID
     public Optional<Movie> getMovie(Long id) {
         return movieRepo.findById(id);
     }
-
 
     @Transactional
     public ResponseEntity<String> deleteMovie(Long id) {
@@ -82,7 +80,6 @@ public class MovieService {
             return new ResponseEntity<>("Movie not found", HttpStatus.NOT_FOUND);
         }
     }
-
 
     public List<Movie> getMoviesByCity(List<String> cities) {
         String todayDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -157,6 +154,11 @@ public class MovieService {
         // Save the updated movie instance
         movieRepo.save(existingMovie);
         return new ResponseEntity<>("Movie Data Updated", HttpStatus.OK);
+    }
+
+    public List<Movie> searchMovies(String query, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return movieRepo.findByTitleContainingIgnoreCase(query, pageable);
     }
 
 }
