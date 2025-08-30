@@ -43,6 +43,12 @@ public class BookingController {
     return bookingService.bookSeats(lockedSeatsRequest);
   }
 
+  @DeleteMapping("/cancel-seats")
+  public ResponseEntity<String> cancelSeats(@RequestParam Long showId, @RequestParam String user){
+    System.out.println("cancel seats called....");
+    return bookingService.cancelSeats(showId, user);
+  }
+
   // 5. Unlock Seats on Cancellation
   @DeleteMapping("/unlock-seats")
   public ResponseEntity<String> unlockSeats(@RequestParam Long showId,@RequestParam String user) {

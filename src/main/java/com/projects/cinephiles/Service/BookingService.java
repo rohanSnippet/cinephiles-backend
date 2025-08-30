@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.SecureRandom;
 import java.time.*;
@@ -139,24 +140,29 @@ public class BookingService {
     @Transactional
     public ResponseEntity<String> unlockSeats(Long showId, String username) {
         Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(showId, username);
-
         // If locked seats do not exist, return a not found response
         if (!optionalLockedSeats.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No locked seats found for this user.");
         }
-
         LockedSeats lockedSeats = optionalLockedSeats.get();
         System.out.println("The locked seats are :"+lockedSeats);
         LocalDateTime expirationTime = lockedSeats.getExpirationTime();
-
         // Check if the expiration time has passed
-/*        if (LocalDateTime.now().isAfter(expirationTime)) {
+        if (LocalDateTime.now().isBefore(expirationTime)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cannot unlock seats, the time has expired.");
-        }*/
-
+        }
         // Delete the locked seats
         lockedSeatsRepo.delete(lockedSeats);
         return ResponseEntity.ok("Seats unlocked using unlock seats....");
+    }
+
+//  Allow Canceling seats at any time
+    @Transactional
+    public ResponseEntity<String> cancelSeats(@RequestParam Long showId, @RequestParam String user) {
+        Optional<LockedSeats> opt = lockedSeatsRepo.findByShowIdAndUserEmail(showId, user);
+        if (!opt.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No locked seats found.");
+        lockedSeatsRepo.delete(opt.get());
+        return ResponseEntity.ok("Seats unlocked using cancel seats....");
     }
 
     @Transactional
