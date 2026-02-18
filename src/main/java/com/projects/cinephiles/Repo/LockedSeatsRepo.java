@@ -5,8 +5,6 @@ import com.projects.cinephiles.models.Show;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -21,9 +19,8 @@ public interface LockedSeatsRepo extends JpaRepository<LockedSeats,Long> {
 
 
     List<LockedSeats> findByExpirationTimeBefore(LocalDateTime dateTime);
-    //@Lock(LockModeType.PESSIMISTIC_WRITE)
-//    @Query("SELECT l FROM LockedSeats l WHERE l.show = :show AND l.expirationTime = :expirationTime > :now")
-   // List<LockedSeats> findActiveLockedSeatsForShow(Show show, LocalDateTime expirationTime);
+
+    void deleteByExpirationTimeBefore(LocalDateTime expiryDate);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<LockedSeats> findByShowAndExpirationTimeAfter(Show show, LocalDateTime expirationTime);
