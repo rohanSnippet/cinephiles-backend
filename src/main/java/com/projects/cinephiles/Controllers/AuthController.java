@@ -16,11 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -80,16 +82,37 @@ public class AuthController {
     }
 
     @GetMapping("/user-info")
-    public ResponseEntity<Map<String, Object>> getUserInfo(@AuthenticationPrincipal OAuth2User principal) {
-        // Check if the principal (authenticated user) is null
-        if (principal == null) {
-            // If not authenticated, return an error or empty map as response
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User is not authenticated"));
+    public ResponseEntity<Map<String, Object>> getUserInfo(Authentication authentication) {
+        // 1. Check if authenticated
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("error", "User is not authenticated"));
         }
 
-        // Return user attributes if authenticated
-        return ResponseEntity.ok(principal.getAttributes());
+        Map<String, Object> response = new HashMap<>();
+        Object principal = authentication.getPrincipal();
+
+        // 2. Handle different Principal types
+        if (principal instanceof OAuth2User) {
+            // Case A: Session-based OAuth2 login (Initial login)
+            OAuth2User oauthUser = (OAuth2User) principal;
+            response.putAll(oauthUser.getAttributes());
+            // Ensure email is set commonly
+            response.put("email", oauthUser.getAttribute("email"));
+
+        } else if (principal instanceof UserDetails) {
+            // Case B: JWT Token login (Subsequent requests)
+            UserDetails userDetails = (UserDetails) principal;
+            response.put("email", userDetails.getUsername());
+            response.put("username", userDetails.getUsername());
+            // Add other details if your UserDetails implementation has them
+
+        } else if (principal instanceof String) {
+            // Case C: Simple string principal
+            response.put("email", principal.toString());
+            response.put("username", principal.toString());
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/callback")

@@ -20,10 +20,14 @@ public class UserController {
     @Autowired
     private TheatreRequestService theatreRequestService;
 
-    @GetMapping
+    @GetMapping()
     public User getUserByUsername(@RequestParam String username){
+        System.out.println("Get by username called");
         return userService.getUserByUsername(username);
     }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable Long id){return userService.getUserById(id);}
 
     @GetMapping("/all-users")
     public List<User> getAllUsers(){

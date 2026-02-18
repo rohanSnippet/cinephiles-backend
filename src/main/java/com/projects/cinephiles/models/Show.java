@@ -1,6 +1,5 @@
 package com.projects.cinephiles.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.projects.cinephiles.Enum.ShowStatus;
 import jakarta.persistence.*;
@@ -107,6 +106,9 @@ public class Show implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "show_Status")
     private ShowStatus status;
+
+    @Version
+    private Long version;
 
     // Method to perform soft delete
     public void delete() {

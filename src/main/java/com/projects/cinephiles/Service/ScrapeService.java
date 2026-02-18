@@ -5,6 +5,7 @@ import com.projects.cinephiles.models.CrewMember;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Async
 public class ScrapeService {
 
     public static String newImgUrl(String name) throws IOException {

@@ -35,42 +35,57 @@ public class UserService {
         if (existingUser.isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-       if(user.getPassword() != null) user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getPassword() != null) user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(Role.USER);
         return userRepo.save(user);
     }
 
     public User getUserByUsername(String username) {
+        System.out.println(username);
         return userRepo.getUserByUsername(username);
     }
 
+    // --- RESTORED METHOD ---
+    public User getUserById(Long id) {
+        return userRepo.findById(id).orElse(null);
+    }
+    // -----------------------
 
     public boolean checkIfUserIsAdmin(String username) {
         User user = userRepo.getUserByUsername(username);
-        return user.getRole()==Role.ADMIN;
+        return user != null && user.getRole() == Role.ADMIN;
     }
 
     public boolean checkIfUserIsOwner(String username) {
         User user = userRepo.getUserByUsername(username);
-        return user.getRole()==Role.THEATRE_OWNER;
+        return user != null && user.getRole() == Role.THEATRE_OWNER;
     }
 
     public User createUserFromOAuth2(OAuth2User oauth2User) {
-        // Extract user information from OAuth2User
         String username = oauth2User.getAttribute("name");
         String email = oauth2User.getAttribute("email");
         String profile = oauth2User.getAttribute("picture");
 
-        // Create and save new user in your database
         User newUser = new User();
-        if (username == null) throw new AssertionError("Username is null");
-        newUser.setFirstName(username.split(" ")[0]);
-        newUser.setLastName(username.split(" ")[1]);
+
+        // Safety check: Handle cases where user might not have a last name
+        if (username != null) {
+            String[] names = username.split(" ");
+            newUser.setFirstName(names[0]);
+            if (names.length > 1) {
+                newUser.setLastName(names[1]);
+            } else {
+                newUser.setLastName("");
+            }
+        } else {
+            newUser.setFirstName("User");
+            newUser.setLastName("");
+        }
+
         newUser.setUsername(email);
         newUser.setProfile(profile);
         newUser.setProvider("google");
         newUser.setRole(Role.USER);
-        // Set other fields as necessary (e.g., role, password, etc.)
         return userRepo.save(newUser);
     }
 
@@ -81,58 +96,21 @@ public class UserService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
 
-            // Update fields if they are provided in updatedUser
-            if (updatedUser.getFirstName() != null) {
-                user.setFirstName(updatedUser.getFirstName());
-            }
-            if (updatedUser.getLastName() != null) {
-                user.setLastName(updatedUser.getLastName());
-            }
-            if (updatedUser.getPhone() != null) {
-                user.setPhone(updatedUser.getPhone());
-            }
-            if (updatedUser.getProfile() != null) {
-                user.setProfile(updatedUser.getProfile());
-            }
-            if (updatedUser.getDob() != null) {
-                user.setDob(updatedUser.getDob());
-            }
-            if (updatedUser.getGender() != null) {
-                user.setGender(updatedUser.getGender());
-            }
-            if (updatedUser.getCurrLocation() != null) {
-                user.setCurrLocation(updatedUser.getCurrLocation());
-            }
-            if (updatedUser.getAddressLine() != null) {
-                user.setAddressLine(updatedUser.getAddressLine());
-            }
-            if (updatedUser.getCity() != null) {
-                user.setCity(updatedUser.getCity());
-            }
-            if (updatedUser.getState() != null) {
-                user.setState(updatedUser.getState());
-            }
-            if (updatedUser.getPincode() != null) {
-                user.setPincode(updatedUser.getPincode());
-            }
-            if (updatedUser.getLandmark() != null) {
-                user.setLandmark(updatedUser.getLandmark());
-            }
-            if (updatedUser.getPublicId() != null) {
-                user.setPublicId(updatedUser.getPublicId());
-            }
+            if (updatedUser.getFirstName() != null) user.setFirstName(updatedUser.getFirstName());
+            if (updatedUser.getLastName() != null) user.setLastName(updatedUser.getLastName());
+            if (updatedUser.getPhone() != null) user.setPhone(updatedUser.getPhone());
+            if (updatedUser.getProfile() != null) user.setProfile(updatedUser.getProfile());
+            if (updatedUser.getDob() != null) user.setDob(updatedUser.getDob());
+            if (updatedUser.getGender() != null) user.setGender(updatedUser.getGender());
+            if (updatedUser.getCurrLocation() != null) user.setCurrLocation(updatedUser.getCurrLocation());
+            if (updatedUser.getAddressLine() != null) user.setAddressLine(updatedUser.getAddressLine());
+            if (updatedUser.getCity() != null) user.setCity(updatedUser.getCity());
+            if (updatedUser.getState() != null) user.setState(updatedUser.getState());
+            if (updatedUser.getPincode() != null) user.setPincode(updatedUser.getPincode());
+            if (updatedUser.getLandmark() != null) user.setLandmark(updatedUser.getLandmark());
+            if (updatedUser.getPublicId() != null) user.setPublicId(updatedUser.getPublicId());
+            if (updatedUser.getRole() != null) user.setRole(updatedUser.getRole());
 
-            // Update role if provided
-            if (updatedUser.getRole() != null) {
-                user.setRole(updatedUser.getRole());
-            }
-
-            // If the password is being updated, encode it
-//            if (updatedUser.getPassword() != null && !updatedUser.getPassword().equals(user.getPassword())) {
-//                user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-//            }
-
-            // Save the updated user
             userRepo.save(user);
             return ResponseEntity.ok(user);
         } else {
@@ -144,31 +122,23 @@ public class UserService {
         Optional<User> optionalUser = userRepo.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            user.setCurrLocation(currLocation); // Update the currLocation field
-            System.out.println(currLocation);
-            userRepo.save(user); // Save the updated user back to the database
-
-            return ResponseEntity.ok(user); // Return the updated user object
+            user.setCurrLocation(currLocation);
+            userRepo.save(user);
+            return ResponseEntity.ok(user);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // Return 404 if user not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
     public List<String> getUserCities(String email) {
         Optional<User> opUser = userRepo.findByUsername(email);
-
         List<String> cities = new ArrayList<>();
-
         if (opUser.isPresent()) {
             User user = opUser.get();
             if (user.getCurrLocation() != null) {
-                // Add the city to the list (even if there's only one city)
                 cities.add(user.getCurrLocation());
             }
-            System.out.println(user.getCurrLocation());
         }
-
-        System.out.println(cities);
         return cities;
     }
 }
