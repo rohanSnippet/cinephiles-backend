@@ -11,8 +11,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.security.SecureRandom;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -240,11 +242,11 @@ public class BookingService {
         order.setTotalAmount(lockedSeats.getPrice() * lockedSeats.getSeatsId().size());
         orderRepo.save(order);
 
-        // Update the show with the newly booked seats
-        synchronized (this) { // Ensure thread safety for concurrent bookings
-            show.getBooked().addAll(lockedSeats.getSeatsId());
-            showRepo.save(show);
-        }
+//        // Update the show with the newly booked seats
+//        synchronized (this) { // Ensure thread safety for concurrent bookings
+//            show.getBooked().addAll(lockedSeats.getSeatsId());
+//            showRepo.save(show);
+//        }
 
         // Remove the locked seats after booking
         lockedSeatsRepo.delete(lockedSeats);
