@@ -54,7 +54,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl)
                 .queryParam("token", jwtToken)
                 .build().toUriString();
-        response.sendRedirect(frontendUrl);
+
+        response.sendRedirect(targetUrl);
     }
 }
 

@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,45 +27,36 @@ public class BookingService {
     private UserRepo userRepo;
     @Autowired
     private ShowRepo showRepo;
-
     @Autowired
     private LockedSeatsRepo lockedSeatsRepo;
-
-  @Autowired
+    @Autowired
     private BookingRepository bookingRepo;
-
-  @Autowired
+    @Autowired
     private TheatreRepo theatreRepo;
-
-  @Autowired
-  private  OrderRepo orderRepo;
+    @Autowired
+    private OrderRepo orderRepo;
 
     @Transactional
     public boolean lockSeats(LockedSeatsRequests lockedSeatsRequest) {
-        // Fetch the Show object by showId
         Optional<Show> optionalShow = showRepo.findById(lockedSeatsRequest.getShowId());
 
         if (optionalShow.isPresent()) {
             Show show = optionalShow.get();
 
-            // Check for already locked seats for the show
+            // ONLY look for locks that are still active in the future
             List<LockedSeats> existingLockedSeats = lockedSeatsRepo.findByShowAndExpirationTimeAfter(show, LocalDateTime.now());
-            //List<LockedSeats> existingLockedSeats = lockedSeatsRepo.findActiveLockedSeatsForShow(show, LocalDateTime.now());
-            // Get a list of seat IDs that are already locked and not expired
+            
             Set<String> alreadyLockedSeats = existingLockedSeats.stream()
                     .flatMap(lockedSeats -> lockedSeats.getSeatsId().stream())
                     .collect(Collectors.toSet());
 
-            // Check if any requested seats are already locked
             for (String seatId : lockedSeatsRequest.getSeatsId()) {
                 if (alreadyLockedSeats.contains(seatId)) {
-                    System.out.println(seatId+" is already locked");
-                    return false; // Return false if any seat is already locked
+                    System.out.println(seatId + " is already locked");
+                    return false; 
                 }
-
             }
 
-            // Proceed to lock the seats as none of them are locked
             LockedSeats lockedSeats = new LockedSeats();
             lockedSeats.setShow(show);
             lockedSeats.setSeatsId(lockedSeatsRequest.getSeatsId());
@@ -75,111 +65,77 @@ public class BookingService {
             lockedSeats.setCgst(lockedSeatsRequest.getCgst());
             lockedSeats.setSgst(lockedSeatsRequest.getSgst());
             lockedSeats.setUserEmail(lockedSeatsRequest.getUser());
-            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(7)); // Set expiration time if needed
+            // Set expiration to exactly 7 minutes from now
+            lockedSeats.setExpirationTime(LocalDateTime.now().plusMinutes(7)); 
 
-            // Save the LockedSeats instance
             lockedSeatsRepo.save(lockedSeats);
-            System.out.println("All seats locked successfully.");
-            return true; // Locking was successful
+            return true; 
         } else {
-            return false; // Show not found
+            return false;
         }
     }
 
+    // Active Cleanup: Removes dead rows from DB to save space.
+    // Even if this delays, the query in lockSeats() ignores expired rows anyway.
     @Transactional
-    //@Scheduled(fixedRate = 60000) // Runs every 60 seconds
     @Scheduled(cron = "0 */1 * * * *")
     public void releaseExpiredSeats() {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        List<Show> shows = showRepo.findActiveShows(); // Ensure it fetches shows with active sessions
-        //System.out.println("Active shows:"+shows);
+        List<Show> shows = showRepo.findActiveShows(); 
+        
         for (Show show : shows) {
-            // Find the expired locked seats
             List<LockedSeats> expiredSeats = show.getLockedSeats().stream()
                     .filter(seat -> seat.getExpirationTime().isBefore(now))
                     .collect(Collectors.toList());
 
-            // Log the expired seats for debugging purposes
-          //  System.out.println("Expired seats: " + expiredSeats);
-
-            // Remove expired seats from the show
-            show.getLockedSeats().removeAll(expiredSeats);
-            System.out.println("Unlocked all expired lockedSeats");
-            // Delete expired seats from the database
-            lockedSeatsRepo.deleteAll(expiredSeats);
-
-            // Persist the updated show
-            showRepo.save(show);
+            if (!expiredSeats.isEmpty()) {
+                show.getLockedSeats().removeAll(expiredSeats);
+                lockedSeatsRepo.deleteAll(expiredSeats);
+                showRepo.save(show);
+            }
         }
     }
 
     @Transactional
     public long getRemainingTime(Long showId, String userEmail) {
         LocalDateTime now = LocalDateTime.now();
-
-        // Fetch the LockedSeats object for the given showId and user
         Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(showId, userEmail);
 
-        // If locked seats exist, calculate the remaining time
         if (optionalLockedSeats.isPresent()) {
-            LockedSeats lockedSeats = optionalLockedSeats.get();
-            System.out.println("LockedSeats"+lockedSeats);
-            LocalDateTime expirationTime = lockedSeats.getExpirationTime();
-
-
+            LocalDateTime expirationTime = optionalLockedSeats.get().getExpirationTime();
             long remainingTime = expirationTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     - now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-
-            // Return remaining time in seconds, ensuring it's not negative
             return Math.max(remainingTime / 1000, 0);
         }
-
-
         return 0;
     }
 
-
+    // Consolidated method for both explicit cancellation and early unlock
     @Transactional
-    public ResponseEntity<String> unlockSeats(Long showId, String username) {
-        Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(showId, username);
-        // If locked seats do not exist, return a not found response
-        if (!optionalLockedSeats.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No locked seats found for this user.");
+    public ResponseEntity<String> cancelSeats(Long showId, String user) {
+        Optional<LockedSeats> opt = lockedSeatsRepo.findByShowIdAndUserEmail(showId, user);
+        if (!opt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No locked seats found.");
         }
-        LockedSeats lockedSeats = optionalLockedSeats.get();
-        System.out.println("The locked seats are :"+lockedSeats);
-        LocalDateTime expirationTime = lockedSeats.getExpirationTime();
-        // Check if the expiration time has passed
-        if (LocalDateTime.now().isBefore(expirationTime)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cannot unlock seats, the time has expired.");
-        }
-        // Delete the locked seats
-        lockedSeatsRepo.delete(lockedSeats);
-        return ResponseEntity.ok("Seats unlocked using unlock seats....");
+        
+        lockedSeatsRepo.delete(opt.get());
+        return ResponseEntity.ok("Seats unlocked successfully.");
     }
 
-//  Allow Canceling seats at any time
+    // Alias unlockSeats to cancelSeats to prevent confusion
     @Transactional
-    public ResponseEntity<String> cancelSeats(@RequestParam Long showId, @RequestParam String user) {
-        Optional<LockedSeats> opt = lockedSeatsRepo.findByShowIdAndUserEmail(showId, user);
-        if (!opt.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No locked seats found.");
-        lockedSeatsRepo.delete(opt.get());
-        return ResponseEntity.ok("Seats unlocked using cancel seats....");
+    public ResponseEntity<String> unlockSeats(Long showId, String username) {
+        return cancelSeats(showId, username);
     }
 
     @Transactional
     public ResponseEntity<String> bookSeats(LockedSeatsRequests lockedSeatsRequests) {
-        // Fetch the show details
-        System.out.println("book seats called ... ");
         Optional<Show> optionalShow = showRepo.findById(lockedSeatsRequests.getShowId());
-        if (!optionalShow.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No shows found.");
-        }
+        if (!optionalShow.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No shows found.");
 
         Show show = optionalShow.get();
         Screen screen = show.getScreen();
 
-        // Fetch the locked seats for the user
         Optional<LockedSeats> optionalLockedSeats = lockedSeatsRepo.findByShowIdAndUserEmail(
                 lockedSeatsRequests.getShowId(), lockedSeatsRequests.getUser()
         );
@@ -190,12 +146,12 @@ public class BookingService {
 
         LockedSeats lockedSeats = optionalLockedSeats.get();
 
-        // Validate that the locked seats are still valid
-        LocalDateTime now = LocalDateTime.now();
-        if (lockedSeats.getExpirationTime().isBefore(now)) {
+        // Final security check: ensure it hasn't expired before processing payment
+        if (lockedSeats.getExpirationTime().isBefore(LocalDateTime.now())) {
+            lockedSeatsRepo.delete(lockedSeats); // clean up
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The locked seats have expired.");
         }
-        // Create a new booking
+
         Booking newBooking = new Booking();
         newBooking.setTheatreId(show.getTId());
         newBooking.setShow(show);
@@ -208,18 +164,13 @@ public class BookingService {
         newBooking.setSgst(lockedSeatsRequests.getSgst());
         newBooking.setTierName(lockedSeatsRequests.getTierName());
 
-        // Fetch the theatre and owner details
         Optional<Theatre> optheatre = theatreRepo.findById(show.getTId());
-        if (!optheatre.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Theatre not found.");
-        }
+        if (!optheatre.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Theatre not found.");
 
         Theatre theatre = optheatre.get();
-        Owner owner = theatre.getOwner();
-        newBooking.setOwner(owner.getId());
+        newBooking.setOwner(theatre.getOwner().getId());
         bookingRepo.save(newBooking);
 
-        // Create a new order
         Order order = new Order();
         order.setSeats(String.join(",", new ArrayList<>(lockedSeats.getSeatsId())));
         order.setBookingId(newBooking.getId());
@@ -227,31 +178,26 @@ public class BookingService {
         order.setBookingDate(LocalDate.now());
         order.setShowId(show.getId());
         order.setScreenName(screen.getSname());
-        order.setMovie(show.getMovie().getTitle());// Use DTO instead of entity
+        order.setMovie(show.getMovie().getTitle());
         order.setStatus("Booked");
         order.setTheatre(theatre.getId());
         order.setPoster(show.getMovie().getPoster());
-        System.out.println("The screen name is :"+screen.getSname());
+
         User opUser = userRepo.getUserByUsername(lockedSeats.getUserEmail());
-        if (opUser == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-        }
+        if (opUser == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
 
         order.setUser(opUser);
         order.setUsername(lockedSeats.getUserEmail());
         order.setTotalAmount(lockedSeats.getPrice() * lockedSeats.getSeatsId().size());
         orderRepo.save(order);
+        
+        // Update the show's booked seats with the newly booked seats
+        show.getBooked().addAll(lockedSeats.getSeatsId());
+        showRepo.save(show);
 
-//        // Update the show with the newly booked seats
-//        synchronized (this) { // Ensure thread safety for concurrent bookings
-//            show.getBooked().addAll(lockedSeats.getSeatsId());
-//            showRepo.save(show);
-//        }
-
-        // Remove the locked seats after booking
+        // Remove lock because it is now officially booked
         lockedSeatsRepo.delete(lockedSeats);
 
         return ResponseEntity.ok("Seats booked successfully.");
     }
-
 }
