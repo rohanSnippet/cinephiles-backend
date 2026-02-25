@@ -1,11 +1,14 @@
-FROM eclipse-temurin:latest
-
+# Build stage
+FROM eclipse-temurin:19-jdk-alpine AS builder
+ 
 WORKDIR /app
-
-# Copy built JAR from build stage
-COPY target/*.jar app.jar
-
-EXPOSE 9000
-
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY . .
+RUN ./mvnw package
+ 
+# Run stage
+FROM eclipse-temurin:19-jdk-alpine AS runner
+ 
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+ 
+CMD ["java", "-jar", "app.jar"]
