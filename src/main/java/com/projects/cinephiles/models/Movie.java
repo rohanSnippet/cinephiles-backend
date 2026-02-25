@@ -23,6 +23,8 @@ public class Movie {
 
     private String title;
     private Integer runtime;
+
+    @Column(length = 2000)
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -61,11 +63,6 @@ public class Movie {
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL , orphanRemoval = true)
     private List<Trailers> trailers;
-//    @ElementCollection
-//    @CollectionTable(name = "movie_trailers", joinColumns = @JoinColumn(name = "movie_id"))
-//    @MapKeyColumn(name = "language")
-//    @Column(name = "trailer_link")
-//    private Map<String, String> trailers;
 
     private LocalDate releaseDate;
     private Boolean bookingOpen;

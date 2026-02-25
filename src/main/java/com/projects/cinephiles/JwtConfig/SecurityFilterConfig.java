@@ -56,6 +56,7 @@ public class SecurityFilterConfig {
             return security.csrf(csrf -> csrf.disable())
                     .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
                     .authorizeHttpRequests(auth -> auth
+                            .requestMatchers("/movie/add-movie", "/movie/edit-movie/**", "/movie/delete-movie/**").hasRole("ADMIN")
                             .requestMatchers("/auth/**", "/oauth2/**", "/movie/**", "/show/**", "/theatre/get-theatres/by-location", "/actor/**", "/",  "/api/payment/verify/**").permitAll()
                             .anyRequest().authenticated())
                     .oauth2Login(oauth2 -> oauth2

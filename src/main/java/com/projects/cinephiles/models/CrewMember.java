@@ -26,7 +26,7 @@ public class CrewMember {
     @Column(name = "role")
     private List<String> roles;  // Change this to List<String>
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "movie_id")
     @JsonIgnore
     private Movie movie;
