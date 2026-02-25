@@ -25,7 +25,7 @@ public class Trailers {
     @Column(name = "url")
     private List<String> trailerUrl;  // Change this to List<String>
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne 
     @JoinColumn(name = "movie_id")
     @JsonIgnore
     private Movie movie;
