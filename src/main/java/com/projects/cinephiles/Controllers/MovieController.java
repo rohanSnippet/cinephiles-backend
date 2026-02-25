@@ -40,10 +40,12 @@ public class MovieController {
     }
 
     @DeleteMapping("/delete-movie/{id}")
+    @PreAuthorize(("hasRole('ADMIN')"))
     public ResponseEntity<String> deleteMovie(@PathVariable Long id){
         return movieService.deleteMovie(id);
     }
     @PutMapping("/edit-movie/{id}")
+    @PreAuthorize(("hasRole('ADMIN')"))
     public ResponseEntity<String> editMovie(@PathVariable Long id,@RequestBody Movie movie){
 
         return movieService.editMovie(id,movie);
