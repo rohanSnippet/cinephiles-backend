@@ -4,6 +4,7 @@ package com.projects.cinephiles.Controllers;
 import com.projects.cinephiles.Service.MovieService;
 import com.projects.cinephiles.models.Movie;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,8 @@ public class MovieController {
 
     @GetMapping("/upcoming-movies")
     public ResponseEntity<List<Movie>> getUpcomingMovies(){
-        return movieService.getUpcomingMovies();
+        List<Movie> upcomming = movieService.getUpcomingMovies();
+        return new ResponseEntity<>(upcomming, HttpStatus.OK);
     }
 
     @PostMapping("/add-movie")

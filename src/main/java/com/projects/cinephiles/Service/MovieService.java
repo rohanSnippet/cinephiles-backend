@@ -7,6 +7,8 @@ import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
 import com.projects.cinephiles.models.Trailers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -41,6 +43,7 @@ public class MovieService {
 
     // Method to add a new movie
     @Transactional
+    @CacheEvict(value = "movies", key = "'upcoming'")
     public Movie saveMovie(Movie movie) {
         List<CrewMember> crewMembers = movie.getCrew();
 
@@ -68,6 +71,7 @@ public class MovieService {
     }
 
     @Transactional
+    @CacheEvict(value="movies", key="'upcoming'")
     public ResponseEntity<String> deleteMovie(Long id) {
         // Check if the movie exists in the database
         Optional<Movie> movieOptional = movieRepo.findById(id);
@@ -89,18 +93,21 @@ public class MovieService {
         return movieRepo.findMoviesByCitiesAndDateAndTime(cities, todayDate, currentTime);
     }
 
-    public ResponseEntity<List<Movie>> getUpcomingMovies() {
+    @Transactional
+    @Cacheable(value = "movies", key = "'upcoming'")
+    public List<Movie> getUpcomingMovies() {
+        System.out.println("CACHE MISS: Fetching upcoming movies from Database!");
+
         List<Movie> movies = movieRepo.findAll();
         LocalDate today = LocalDate.now();
 
-        // Filter and collect upcoming movies, handling any date parsing exceptions
-        List<Movie> upcoming = movies.stream()
-                .filter(movie -> movie.getReleaseDate()!=null && movie.getReleaseDate().compareTo(today)>0)
+        // Filter and collect upcoming movies
+        return movies.stream()
+                .filter(movie -> movie.getReleaseDate() != null && movie.getReleaseDate().compareTo(today) > 0)
                 .collect(Collectors.toList());
-
-        return new ResponseEntity<>(upcoming, HttpStatus.OK);
     }
 
+    @CacheEvict(value = "movies", key = "'upcoming'")
     public ResponseEntity<String> editMovie(Long id, Movie updatedMovie) {
         Optional<Movie> optionalMovie = movieRepo.findById(id);
 
