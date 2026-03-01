@@ -172,7 +172,7 @@ public class PaymentService {
 
         if (response.getStatusCode() == HttpStatus.OK) {
             String paymentSessionId = (String) response.getBody().get("payment_session_id");
-            String returnUrl = frontendReturnUrl + "/payment-success?orderId=" + orderId;
+            String returnUrl = frontendReturnUrl + "payment-success?orderId=" + orderId;
             return new PaymentResponse(paymentSessionId, orderId, returnUrl);
         } else {
             throw new RuntimeException("Failed to create payment session");
