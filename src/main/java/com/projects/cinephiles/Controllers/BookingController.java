@@ -19,14 +19,16 @@ public class BookingController {
   private BookingService bookingService;
 
   // 1. Lock Seats
+  // In BookingController.java
   @PostMapping("/lock-seats")
-  public ResponseEntity<String> lockSeats(@RequestBody LockedSeatsRequests lockedSeatsRequest) {
-    boolean isLocked = bookingService.lockSeats(lockedSeatsRequest);
+  public ResponseEntity<?> lockSeats(@RequestBody LockedSeatsRequests lockedSeatsRequest) {
+    Long expiresAtMs = bookingService.lockSeats(lockedSeatsRequest);
 
-    if (isLocked) {
-      return ResponseEntity.ok("Seats locked successfully.");
+    if (expiresAtMs != null) {
+      // Return the exact unix timestamp deadline
+      return ResponseEntity.ok(expiresAtMs);
     } else {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Show not found or seats already locked.");
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("Seats are already locked by someone else.");
     }
   }
 
@@ -49,12 +51,12 @@ public class BookingController {
     return bookingService.cancelSeats(showId, user);
   }
 
-  // 5. Unlock Seats on Cancellation
-  @DeleteMapping("/unlock-seats")
-  public ResponseEntity<String> unlockSeats(@RequestParam Long showId,@RequestParam String user) {
-    System.out.println("unlock seats is called.....");
-    return bookingService.unlockSeats(showId, user);
-  }
+//  // 5. Unlock Seats on Cancellation
+//  @DeleteMapping("/unlock-seats")
+//  public ResponseEntity<String> unlockSeats(@RequestParam Long showId,@RequestParam String user) {
+//    System.out.println("unlock seats is called.....");
+//    return bookingService.unlockSeats(showId, user);
+//  }
 
   @GetMapping("/unlock")
   public boolean unlock(){
