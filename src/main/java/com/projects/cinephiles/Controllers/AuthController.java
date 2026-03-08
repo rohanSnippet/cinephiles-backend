@@ -11,17 +11,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -127,10 +130,36 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", token));
     }
 
+//    @PostMapping("/logout")
+//   // @CacheEvict(value = "user", key = "")
+//    public ResponseEntity<?> oauthLogout(HttpServletRequest request){
+//        System.out.println("logout hit"+ request);
+//        request.getSession().invalidate();
+//        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+//    }
+
     @PostMapping("/logout")
-    public ResponseEntity<?> oauthLogout(HttpServletRequest request){
-        System.out.println("logout hit");
-        request.getSession().invalidate();
+    @CacheEvict(value = "user", key = "#principal.name", condition = "#principal != null")
+    public ResponseEntity<?> oauthLogout(HttpServletRequest request, Principal principal) {
+
+        // 1. Extract the username from the Principal
+        if (principal != null) {
+            System.out.println("Logout hit for user: " + principal.getName());
+        } else {
+            System.out.println("Logout hit for an unauthenticated request");
+        }
+
+        // 2. Invalidate the session (Useful for Google OAuth2 stateful sessions)
+        // Using false prevents creating a NEW session just to invalidate it
+        var session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // 3. Clear the Security Context to instantly revoke access in the current thread
+        SecurityContextHolder.clearContext();
+
+        // 4. Return success message
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
