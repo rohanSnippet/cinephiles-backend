@@ -7,6 +7,7 @@ import com.projects.cinephiles.Repo.UserRepo;
 import com.projects.cinephiles.models.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -73,9 +74,6 @@ public class ScreenService {
           }
         return screenRepository.save(existingScreen);
     }
-
-
-
 
     public void deleteScreen(Long id) {
         screenRepository.deleteById(id);
