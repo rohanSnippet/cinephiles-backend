@@ -5,6 +5,8 @@ import com.projects.cinephiles.Repo.UserRepo;
 import com.projects.cinephiles.exceptions.UserAlreadyExistsException;
 import com.projects.cinephiles.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,12 +42,15 @@ public class UserService {
         return userRepo.save(user);
     }
 
+    @Cacheable(value = "user", key="#username")
     public User getUserByUsername(String username) {
         System.out.println(username);
         return userRepo.getUserByUsername(username);
     }
 
-    // --- RESTORED METHOD ---
+    // --- Important method ---
+
+    //@Cacheable(value = "user", key="#id")
     public User getUserById(Long id) {
         return userRepo.findById(id).orElse(null);
     }
@@ -90,6 +95,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = "user", key="#result.body.username")
     public ResponseEntity<User> updateUserById(Long id, User updatedUser) {
         Optional<User> optionalUser = userRepo.findById(id);
 
