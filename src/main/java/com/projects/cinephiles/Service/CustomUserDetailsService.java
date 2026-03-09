@@ -21,24 +21,31 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
 
+//    @Override
+//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+//        User user = userRepository.findByUsername(username)
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+//
+//        UserBuilder builder = withUsername(user.getUsername());
+//        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
+//        builder.authorities(authority);
+//
+//        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+//            // This means the user is an OAuth2 user, provide a dummy password
+//            builder.password("DUMMY_PASSWORD");
+//        } else {
+//
+//            builder.password(user.getPassword());
+//        }
+//
+//        return builder.build();
+//    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
+        // Return your User entity directly since it implements UserDetails!
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        UserBuilder builder = withUsername(user.getUsername());
-        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
-        builder.authorities(authority);
-
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            // This means the user is an OAuth2 user, provide a dummy password
-            builder.password("DUMMY_PASSWORD");
-        } else {
-
-            builder.password(user.getPassword());
-        }
-
-        return builder.build();
     }
 }
 
