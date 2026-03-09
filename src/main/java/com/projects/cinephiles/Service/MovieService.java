@@ -1,18 +1,24 @@
 package com.projects.cinephiles.Service;
 
+import com.projects.cinephiles.DTO.RestPageImpl;
 import com.projects.cinephiles.Repo.CrewMemberRepo;
 import com.projects.cinephiles.Repo.MovieRepo;
 import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
 import com.projects.cinephiles.models.Trailers;
+import io.netty.util.concurrent.CompleteFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +27,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +50,10 @@ public class MovieService {
 
     // Method to add a new movie
     @Transactional
-    @CacheEvict(value = "movies", key = "'upcoming'")
+    @Caching(evict = {
+            @CacheEvict(value = "movies", key = "'upcoming'"),
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+    })
     public Movie saveMovie(Movie movie) {
         List<CrewMember> crewMembers = movie.getCrew();
 
@@ -71,7 +81,10 @@ public class MovieService {
     }
 
     @Transactional
-    @CacheEvict(value="movies", key="'upcoming'")
+    @Caching(evict = {
+            @CacheEvict(value = "movies", key="'upcoming'"),
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+    })
     public ResponseEntity<String> deleteMovie(Long id) {
         // Check if the movie exists in the database
         Optional<Movie> movieOptional = movieRepo.findById(id);
@@ -107,7 +120,28 @@ public class MovieService {
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = "movies", key = "'upcoming'")
+    @Cacheable(value = "upcomingMoviesPaginated", key = "#page + '-' + #size + '-' + #sortBy + '-' + #direction")
+    public RestPageImpl<Movie> getUpcomingMovies(int page, int size, String sortBy, String direction){
+        System.out.println("CACHE MISS: Fetching Paginated Data from DB for Page: " + page);
+
+        Sort sort = direction.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending():
+                Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        LocalDate today = LocalDate.now();
+
+        // 1. Get the raw page from the database
+        Page<Movie> rawPage = movieRepo.findByReleaseDateAfter(today, pageable);
+
+        // 2. Wrap it in the serializable class and return it
+        return new RestPageImpl<>(rawPage);
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = "movies", key = "'upcoming'"),
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+    })
     public ResponseEntity<String> editMovie(Long id, Movie updatedMovie) {
         Optional<Movie> optionalMovie = movieRepo.findById(id);
 
@@ -167,5 +201,58 @@ public class MovieService {
         Pageable pageable = PageRequest.of(0, limit);
         return movieRepo.findByTitleContainingIgnoreCase(query, pageable);
     }
+
+    //bulk upload movies
+    public List<Movie> saveAllMovies(List<Movie> movies){
+        if(movies == null || movies.isEmpty()) return movies;
+
+        for(Movie movie: movies){
+
+            // Set the movie reference on each crew member
+            List<CrewMember> crewMembers = movie.getCrew();
+            if (crewMembers != null) {
+                for (CrewMember crewMember : crewMembers) {
+                    crewMember.setMovie(movie);
+                }
+            }
+
+            // Set the movie reference on each trailer
+            List<Trailers> trailers = movie.getTrailers();
+            if (trailers != null) {
+                for (Trailers trailer : trailers) {
+                    trailer.setMovie(movie);
+                }
+            }
+        }
+      return movieRepo.saveAll(movies);
+    }
+
+    @Async
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "movies", key = "'upcoming'"),
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+    })
+    public CompletableFuture<Void> saveMoviesInBackground(List<Movie> movies){
+        if (movies == null || movies.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        for (Movie movie : movies) {
+            // Set relationships to avoid null references
+            if (movie.getCrew() != null) {
+                movie.getCrew().forEach(crew -> crew.setMovie(movie));
+            }
+            if (movie.getTrailers() != null) {
+                movie.getTrailers().forEach(trailer -> trailer.setMovie(movie));
+            }
+        }
+
+        // Save all movies in a single batch
+        movieRepo.saveAll(movies);
+        System.out.println("Background task: Successfully saved " + movies.size() + " movies.");
+        return CompletableFuture.completedFuture(null);
+    }
+
 
 }
