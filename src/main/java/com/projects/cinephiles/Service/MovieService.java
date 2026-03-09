@@ -202,7 +202,7 @@ public class MovieService {
         return movieRepo.findByTitleContainingIgnoreCase(query, pageable);
     }
 
-    //bulk upload movies
+    //bulk upload movies data
     public List<Movie> saveAllMovies(List<Movie> movies){
         if(movies == null || movies.isEmpty()) return movies;
 
