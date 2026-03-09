@@ -1,0 +1,49 @@
+name: Cinephiles CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ] # Triggers the pipeline when you push to main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # --- PHASE 1: CI (Local Steps 1, 2, 3) ---
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17' # Change this if you use Java 21
+        distribution: 'temurin'
+
+    - name: Build with Maven
+      run: ./mvnw clean package -DskipTests
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v4
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/cinephiles-backend:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/cinephiles-backend:latest
+
+    # --- PHASE 2: CD (EC2 Steps 4, 5, 6, 7) ---
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user # Default for Amazon Linux
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Navigate to your docker-compose directory if needed
+          cd /home/ec2-user/app-deployment
+          
+          docker-compose pull
+          docker-compose down 
+          docker-compose up -d
