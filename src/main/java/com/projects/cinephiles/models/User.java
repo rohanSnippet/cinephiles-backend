@@ -109,4 +109,8 @@ public class User implements UserDetails {
         return true;
     }
 
+    @Override
+    public String getPassword() {
+        return this.password == null ? "" : this.password;
+    }
 }
