@@ -14,6 +14,8 @@ import java.util.List;
 @Repository
 public interface MovieRepo extends JpaRepository<Movie,Long> {
 
+    @Query("SELECT DISTINCT m FROM Movie m JOIN m.promotedRegions r WHERE r = :userRegion OR r = 'GLOBAL'")
+    List<Movie> findPromotedMoviesByRegion(@Param("userRegion") String userRegion);
 
     @Query("SELECT DISTINCT m FROM Movie m " +
             "JOIN m.shows s " +
