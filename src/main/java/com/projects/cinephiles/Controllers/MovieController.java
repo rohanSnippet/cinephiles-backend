@@ -21,8 +21,18 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
+    // In MovieController.java
+
+    // In MovieController.java
+    @GetMapping("/featured")
+    public ResponseEntity<List<Movie>> getFeaturedMovies(@RequestParam(defaultValue = "GLOBAL") String region) {
+        List<Movie> featured = movieService.getFeaturedMoviesByRegion(region);
+        return new ResponseEntity<>(featured, HttpStatus.OK);
+    }
+
+
+
     @GetMapping("/all-movies")
-    @PreAuthorize(("hasRole('ADMIN')"))
     public ResponseEntity<List<Movie>> getAllMovies(){
         return movieService.getAllMovies();
     }
