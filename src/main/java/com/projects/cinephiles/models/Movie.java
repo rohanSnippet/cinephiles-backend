@@ -72,6 +72,12 @@ public class Movie {
     private Boolean bookingOpen;
     private Boolean promoted;
 
+    // In Movie.java
+    @ElementCollection
+    @CollectionTable(name = "movie_promoted_regions", joinColumns = @JoinColumn(name = "movie_id"))
+    @Column(name = "region")
+    private List<String> promotedRegions; // e.g., ["Maharashtra", "Delhi NCR", "GLOBAL"]
+
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)  // Cascade and orphan removal
     @JsonIgnore
     private List<Show> shows;
