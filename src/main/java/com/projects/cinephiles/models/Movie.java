@@ -6,8 +6,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -72,11 +74,16 @@ public class Movie {
     private Boolean bookingOpen;
     private Boolean promoted;
 
-    // In Movie.java
-    @ElementCollection
-    @CollectionTable(name = "movie_promoted_regions", joinColumns = @JoinColumn(name = "movie_id"))
-    @Column(name = "region")
-    private List<String> promotedRegions; // e.g., ["Maharashtra", "Delhi NCR", "GLOBAL"]
+//    // In Movie.java
+//    @ElementCollection
+//    @CollectionTable(name = "movie_promoted_regions", joinColumns = @JoinColumn(name = "movie_id"))
+//    @Column(name = "region")
+//    private List<String> promotedRegions; // e.g., ["Maharashtra", "Delhi NCR", "GLOBAL"]
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "movie_featured_regions", joinColumns = @JoinColumn(name = "movie_id"))
+    @Column(name = "region_name")
+    private Set<String> featuredRegions = new HashSet<>();
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)  // Cascade and orphan removal
     @JsonIgnore
