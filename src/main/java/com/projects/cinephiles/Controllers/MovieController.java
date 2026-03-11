@@ -1,6 +1,7 @@
 package com.projects.cinephiles.Controllers;
 
 
+import com.projects.cinephiles.DTO.FeaturedMovieUpdateRequest;
 import com.projects.cinephiles.DTO.RestPageImpl;
 import com.projects.cinephiles.Service.MovieService;
 import com.projects.cinephiles.models.Movie;
@@ -12,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -21,16 +23,16 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
-    // In MovieController.java
-
-    // In MovieController.java
     @GetMapping("/featured")
-    public ResponseEntity<List<Movie>> getFeaturedMovies(@RequestParam(defaultValue = "GLOBAL") String region) {
-        List<Movie> featured = movieService.getFeaturedMoviesByRegion(region);
-        return new ResponseEntity<>(featured, HttpStatus.OK);
+    public ResponseEntity<?> getFeaturedMovies(@RequestParam(required = true) String region) {
+        return ResponseEntity.ok(movieService.getFeaturedMoviesByRegion(region));
     }
 
-
+    @PostMapping("/featured")
+    public ResponseEntity<?> updateFeaturedMovies(@RequestBody FeaturedMovieUpdateRequest request) {
+        movieService.updateFeaturedMoviesForRegion(request.getRegion(), request.getMovieIds());
+        return ResponseEntity.ok(Map.of("message", "Featured movies updated for " + request.getRegion()));
+    }
 
     @GetMapping("/all-movies")
     public ResponseEntity<List<Movie>> getAllMovies(){
