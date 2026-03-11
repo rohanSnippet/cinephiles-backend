@@ -42,6 +42,38 @@ public class MovieService {
     @Autowired
     private TheatreRepo theatreRepo;
 
+    // Fetch featured movies and cache them in Redis
+//    @Cacheable(value = "featuredMovies")
+//    public List<Movie> getFeaturedMoviesByRegion(String region) {
+//        System.out.println("CACHE MISS: Fetching Promoted/Featured movies from DB");
+//        return movieRepo.findPromotedMoviesByRegion(region);
+//    }
+
+    @Cacheable(value = "featuredMovies", key = "#region")
+    public List<Movie> getFeaturedMoviesByRegion(String region) {
+        return movieRepo.findFeaturedByRegionOrGlobal(region);
+    }
+
+    @Transactional
+    @CacheEvict(value = "featuredMovies", key = "#region")
+    public void updateFeaturedMoviesForRegion(String region, List<Long> movieIds) {
+        // 1. Remove this specific region from previously featured movies
+        List<Movie> currentlyFeatured = movieRepo.findFeaturedByExactRegion(region);
+        for (Movie movie : currentlyFeatured) {
+            movie.getFeaturedRegions().remove(region);
+            movieRepo.save(movie);
+        }
+
+        // 2. Add the region to the newly selected movies
+        if (movieIds != null && !movieIds.isEmpty()) {
+            List<Movie> newlyFeatured = movieRepo.findAllById(movieIds);
+            for (Movie movie : newlyFeatured) {
+                movie.getFeaturedRegions().add(region);
+                movieRepo.save(movie);
+            }
+        }
+    }
+
     // Method to get all movies
     public ResponseEntity<List<Movie>> getAllMovies() {
         List<Movie> movies = movieRepo.findAll();
@@ -52,7 +84,8 @@ public class MovieService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "movies", key = "'upcoming'"),
-            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true)
     })
     public Movie saveMovie(Movie movie) {
         List<CrewMember> crewMembers = movie.getCrew();
@@ -83,7 +116,8 @@ public class MovieService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "movies", key="'upcoming'"),
-            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true)
     })
     public ResponseEntity<String> deleteMovie(Long id) {
         // Check if the movie exists in the database
@@ -140,7 +174,8 @@ public class MovieService {
 
     @Caching(evict = {
             @CacheEvict(value = "movies", key = "'upcoming'"),
-            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true)
     })
     public ResponseEntity<String> editMovie(Long id, Movie updatedMovie) {
         Optional<Movie> optionalMovie = movieRepo.findById(id);
@@ -231,7 +266,8 @@ public class MovieService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "movies", key = "'upcoming'"),
-            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true)
+            @CacheEvict(value = "upcomingMoviesPaginated", allEntries = true),
+            @CacheEvict(value = "featuredMovies", allEntries = true)
     })
     public CompletableFuture<Void> saveMoviesInBackground(List<Movie> movies){
         if (movies == null || movies.isEmpty()) {
