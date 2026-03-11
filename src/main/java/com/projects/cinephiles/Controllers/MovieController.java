@@ -29,6 +29,7 @@ public class MovieController {
     }
 
     @PostMapping("/featured")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateFeaturedMovies(@RequestBody FeaturedMovieUpdateRequest request) {
         movieService.updateFeaturedMoviesForRegion(request.getRegion(), request.getMovieIds());
         return ResponseEntity.ok(Map.of("message", "Featured movies updated for " + request.getRegion()));
