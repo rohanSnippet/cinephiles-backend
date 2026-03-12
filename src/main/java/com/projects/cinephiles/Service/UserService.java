@@ -124,17 +124,19 @@ public class UserService {
         }
     }
 
+    @CacheEvict(value = "user", key="#result.body.username")
     public ResponseEntity<User> updateLocationById(Long id, String currLocation) {
         Optional<User> optionalUser = userRepo.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             user.setCurrLocation(currLocation);
             userRepo.save(user);
-            return ResponseEntity.ok(user);
+            return new ResponseEntity<>(user, HttpStatus.OK);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
 
     public List<String> getUserCities(String email) {
         Optional<User> opUser = userRepo.findByUsername(email);
