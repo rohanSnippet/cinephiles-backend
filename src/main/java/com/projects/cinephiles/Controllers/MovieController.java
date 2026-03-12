@@ -35,6 +35,18 @@ public class MovieController {
         return ResponseEntity.ok(Map.of("message", "Featured movies updated for " + request.getRegion()));
     }
 
+    @GetMapping("/paginated")
+    public ResponseEntity<Page<Movie>> getAdminMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy, // 'id', 'title', 'releaseDate'
+            @RequestParam(defaultValue = "desc") String direction, // 'asc' or 'desc'
+            @RequestParam(required = false) String search
+    ) {
+        Page<Movie> moviePage = movieService.getMoviesPaginated(page, size, sortBy, direction, search);
+        return ResponseEntity.ok(moviePage);
+    }
+
     @GetMapping("/all-movies")
     public ResponseEntity<List<Movie>> getAllMovies(){
         return movieService.getAllMovies();

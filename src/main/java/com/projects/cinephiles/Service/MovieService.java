@@ -42,13 +42,6 @@ public class MovieService {
     @Autowired
     private TheatreRepo theatreRepo;
 
-    // Fetch featured movies and cache them in Redis
-//    @Cacheable(value = "featuredMovies")
-//    public List<Movie> getFeaturedMoviesByRegion(String region) {
-//        System.out.println("CACHE MISS: Fetching Promoted/Featured movies from DB");
-//        return movieRepo.findPromotedMoviesByRegion(region);
-//    }
-
     @Cacheable(value = "featuredMovies", key = "#region")
     public List<Movie> getFeaturedMoviesByRegion(String region) {
         return movieRepo.findFeaturedByRegionOrGlobal(region);
@@ -74,13 +67,11 @@ public class MovieService {
         }
     }
 
-    // Method to get all movies
     public ResponseEntity<List<Movie>> getAllMovies() {
         List<Movie> movies = movieRepo.findAll();
         return new ResponseEntity<>(movies, HttpStatus.OK);
     }
 
-    // Method to add a new movie
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "movies", key = "'upcoming'"),
@@ -238,29 +229,29 @@ public class MovieService {
     }
 
     //bulk upload movies data
-    public List<Movie> saveAllMovies(List<Movie> movies){
-        if(movies == null || movies.isEmpty()) return movies;
-
-        for(Movie movie: movies){
-
-            // Set the movie reference on each crew member
-            List<CrewMember> crewMembers = movie.getCrew();
-            if (crewMembers != null) {
-                for (CrewMember crewMember : crewMembers) {
-                    crewMember.setMovie(movie);
-                }
-            }
-
-            // Set the movie reference on each trailer
-            List<Trailers> trailers = movie.getTrailers();
-            if (trailers != null) {
-                for (Trailers trailer : trailers) {
-                    trailer.setMovie(movie);
-                }
-            }
-        }
-      return movieRepo.saveAll(movies);
-    }
+//    public List<Movie> saveAllMovies(List<Movie> movies){
+//        if(movies == null || movies.isEmpty()) return movies;
+//
+//        for(Movie movie: movies){
+//
+//            // Set the movie reference on each crew member
+//            List<CrewMember> crewMembers = movie.getCrew();
+//            if (crewMembers != null) {
+//                for (CrewMember crewMember : crewMembers) {
+//                    crewMember.setMovie(movie);
+//                }
+//            }
+//
+//            // Set the movie reference on each trailer
+//            List<Trailers> trailers = movie.getTrailers();
+//            if (trailers != null) {
+//                for (Trailers trailer : trailers) {
+//                    trailer.setMovie(movie);
+//                }
+//            }
+//        }
+//      return movieRepo.saveAll(movies);
+//    }
 
     @Async
     @Transactional
@@ -290,5 +281,21 @@ public class MovieService {
         return CompletableFuture.completedFuture(null);
     }
 
+    // Inside MovieService.java
+
+    public Page<Movie> getMoviesPaginated(int page, int size, String sortBy, String direction, String search) {
+        // Build the sorting object
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        // Build the pagination request
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Call the new searchBy... method!
+        if (search != null && !search.trim().isEmpty()) {
+            return movieRepo.searchByTitleContainingIgnoreCase(search, pageable);
+        } else {
+            return movieRepo.findAll(pageable);
+        }
+    }
 
 }

@@ -14,13 +14,9 @@ import java.util.List;
 @Repository
 public interface MovieRepo extends JpaRepository<Movie,Long> {
 
-    // Add to MovieRepo.java
-
-    // For the Carousal: Get movies for this region OR Pan India
     @Query("SELECT m FROM Movie m JOIN m.featuredRegions r WHERE r = :region OR r = 'Global (Pan India)'")
     List<Movie> findFeaturedByRegionOrGlobal(@Param("region") String region);
 
-    // For Admin: Get movies ONLY for this exact region to prevent overriding Global movies accidentally
     @Query("SELECT m FROM Movie m JOIN m.featuredRegions r WHERE r = :region")
     List<Movie> findFeaturedByExactRegion(@Param("region") String region);
 
@@ -36,6 +32,8 @@ public interface MovieRepo extends JpaRepository<Movie,Long> {
 
 
     List<Movie> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
+    Page<Movie> searchByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Movie> findByReleaseDateAfter(LocalDate date, Pageable pageable);
 }
