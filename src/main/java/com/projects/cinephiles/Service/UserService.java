@@ -67,31 +67,20 @@ public class UserService {
     }
 
     public User createUserFromOAuth2(OAuth2User oauth2User) {
-        String username = oauth2User.getAttribute("name");
+        String firstName = oauth2User.getAttribute("given_name");
+        String lastName = oauth2User.getAttribute("family_name");
         String email = oauth2User.getAttribute("email");
         String profile = oauth2User.getAttribute("picture");
 
         User newUser = new User();
-
-        // Safety check: Handle cases where user might not have a last name
-        if (username != null) {
-            String[] names = username.split(" ");
-            newUser.setFirstName(names[0]);
-            if (names.length > 1) {
-                newUser.setLastName(names[1]);
-            } else {
-                newUser.setLastName("");
-            }
-        } else {
-            newUser.setFirstName("User");
-            newUser.setLastName("");
-        }
-
+        newUser.setFirstName(firstName);
+        newUser.setLastName(lastName);
         newUser.setUsername(email);
         newUser.setProfile(profile);
         newUser.setProvider("google");
         newUser.setRole(Role.USER);
         return userRepo.save(newUser);
+
     }
 
     @Transactional
