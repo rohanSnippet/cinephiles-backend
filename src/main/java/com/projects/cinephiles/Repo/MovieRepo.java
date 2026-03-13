@@ -30,7 +30,6 @@ public interface MovieRepo extends JpaRepository<Movie,Long> {
             @Param("todayDate") String todayDate,
             @Param("currentTime") String currentTime);
 
-
     List<Movie> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Movie> searchByTitleContainingIgnoreCase(String title, Pageable pageable);
