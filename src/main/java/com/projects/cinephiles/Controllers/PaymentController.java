@@ -25,5 +25,20 @@ public class PaymentController {
         System.out.println("/verify called ......");
         return ResponseEntity.ok(paymentService.verifyPayment(orderId));
     }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<String> cashfreeWebhook(
+            @RequestBody String rawPayload,
+            @RequestHeader(value = "x-webhook-signature", required = false) String signature,
+            @RequestHeader(value = "x-webhook-timestamp", required = false) String timestamp) {
+
+        System.out.println("/webhook received ......");
+
+        // Let the service layer verify and process it
+        paymentService.handleWebhook(rawPayload, signature, timestamp);
+
+        // Cashfree expects an HTTP 200 OK to know you received it successfully
+        return ResponseEntity.ok("OK");
+    }
 }
 
