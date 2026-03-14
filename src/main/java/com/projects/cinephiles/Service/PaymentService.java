@@ -1,13 +1,13 @@
 package com.projects.cinephiles.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.projects.cinephiles.DTO.BookingSuccessResponse;
 import com.projects.cinephiles.DTO.LockedSeatsRequests;
 import com.projects.cinephiles.DTO.PaymentRequest;
 import com.projects.cinephiles.DTO.PaymentResponse;
 import com.projects.cinephiles.Repo.*;
 import com.projects.cinephiles.models.*;
-import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,14 +16,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-
 
 @Slf4j
 @Service
@@ -33,7 +33,7 @@ public class PaymentService {
     private PaymentRepo orderRepository;
 
     @Autowired
-   private UserRepo userRepo;
+    private UserRepo userRepo;
 
     @Value("${cashfree.client.id}")
     private String clientId;
@@ -63,39 +63,31 @@ public class PaymentService {
     private TheatreRepo theatreRepo;
 
     @Autowired
-    private OrderRepo orderRepo;
-
-    @Autowired
     private BookingRepository bookingRepo;
 
     private static final String UPPERCASE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final SecureRandom random = new SecureRandom();
+
     public static String generateUniqueBookingId() {
-        int length = 3 + random.nextInt(3); // Random part length 3 to 5
+        int length = 3 + random.nextInt(3);
         StringBuilder randomPart = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             randomPart.append(UPPERCASE_ALPHABET.charAt(random.nextInt(UPPERCASE_ALPHABET.length())));
         }
-        // Add last 5 digits of current time in milliseconds to ensure uniqueness
         String timePart = String.valueOf(Instant.now().toEpochMilli()).substring(8);
         return randomPart + timePart;
     }
 
-
     public PaymentResponse createOrder(PaymentRequest request) {
-        // 3. Create orderId
-        System.out.println(request);
         String orderId = request.getUsername().substring(0, 4) + System.currentTimeMillis();
         User user = userRepo.getUserByUsername(request.getUsername());
         if (user == null) {
             throw new IllegalArgumentException("User with username " + request.getUsername() + " not found.");
         }
-         Optional<Show> opshow = showRepo.findById(request.getShowId());
+        Optional<Show> opshow = showRepo.findById(request.getShowId());
         if(opshow.isEmpty()) return null;
         Show show = opshow.get();
 
-        System.out.println(user + " is the user ....");
-        // 4. Save order in DB
         PaymentOrder order = new PaymentOrder();
         order.setOrderId(orderId);
         order.setUserId(user.getId());
@@ -104,36 +96,26 @@ public class PaymentService {
         order.setTierName(request.getTierName());
         order.setCgst(request.getCgst());
         order.setSgst(request.getSgst());
-        System.out.println("seats are : "+String.join(",", request.getSeatsIds()));
         if(request.getSeatsIds() == null) return null;
         order.setSeatIds(String.join(",", request.getSeatsIds()));
         order.setAmount(request.getAmount());
         order.setStatus("CREATED");
         order.setCreatedAt(LocalDateTime.now());
         orderRepository.save(order);
-        System.out.println("order saved in db");
 
-
-        // 5. Call Cashfree API
         String url = cashfreeApiUrl + "/pg/orders";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-api-version", "2025-01-01");
         headers.set("x-client-id", clientId);
         headers.set("x-client-secret", clientSecret);
-//        headers.set("Content-Type", "application/json");
-//        headers.set("Accept", "application/
-        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        System.out.println(url+" called.....");
         double roundedAmount = new BigDecimal(request.getAmount()).setScale(2, RoundingMode.HALF_UP).doubleValue();
         Map<String, Object> payload = new HashMap<>();
         payload.put("order_id", orderId);
         payload.put("order_currency", "INR");
         payload.put("order_amount", roundedAmount);
-
-        System.out.println(payload+" Payload set.....");
 
         Map<String, String> customerDetails = new HashMap<>();
         customerDetails.put("customer_id", generateCustomerId(user.getId(),request.getUsername()));
@@ -141,125 +123,169 @@ public class PaymentService {
         customerDetails.put("customer_email",request.getUsername());
         payload.put("customer_details", customerDetails);
 
-
-        System.out.println(customerDetails+" CustomerDetails set.....");
-
-        //Extra block added
-//        Optional<Show> opShow = showRepo.findById(request.getShowId());
-//        if(opShow.isEmpty()) return null;
-//
-//        Show show = opShow.get();
-//        Movie movie = show.getMovie();
-//
-//        Map<String, Object> cartDetails = new HashMap<>();
-//        List<Map<String, Object>> cartItems = new ArrayList<>();
-//        Map<String, Object> item = new HashMap<>();
-//        item.put("item_name", movie.getTitle());
-//        Double amt = request.getAmount()/request.getSeatIds().size();
-//        item.put("item_quantity", request.getSeatIds().size());
-//        item.put("item_price", amt);
-//        cartItems.add(item);
-//        cartDetails.put("cart_items", cartItems);
-//        payload.put("cart_details", cartDetails);
-//
-//        System.out.println(cartDetails+" Movie Details set.....");
+        // Required: Attach return_url for modal processing
+        Map<String, String> orderMeta = new HashMap<>();
+        //orderMeta.put("return_url", frontendReturnUrl + "booking-confirmation?order_id={order_id}");
+        orderMeta.put("return_url", frontendReturnUrl + "/payment-success?order_id={order_id}");
+        payload.put("order_meta", orderMeta);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
         RestTemplate restTemplate = new RestTemplate();
-        System.out.println(entity);
 
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             String paymentSessionId = (String) response.getBody().get("payment_session_id");
-            String returnUrl = frontendReturnUrl + "payment-success?orderId=" + orderId;
-            return new PaymentResponse(paymentSessionId, orderId, returnUrl);
+            return new PaymentResponse(paymentSessionId, orderId, orderMeta.get("return_url"));
         } else {
             throw new RuntimeException("Failed to create payment session");
         }
     }
 
     private String generateCustomerId(long userId, String username) {
-        // 1. Take only the part before '@' from email
         String namePart = username.split("@")[0];
-        // 2. Remove any invalid characters (keep letters, digits, underscores)
         namePart = namePart.replaceAll("[^a-zA-Z0-9_-]", "_");
-        // 3. Append userId to ensure uniqueness
         return namePart + "_" + userId;
     }
 
+    // --- NEW: REUSABLE CORE BOOKING LOGIC ---
+    @Transactional
+    public String processSuccessfulOrder(PaymentOrder order) {
+        order.setStatus("PAID");
+        orderRepository.save(order);
+
+        User user = userRepo.getUserById(order.getUserId());
+        LockedSeatsRequests lockedSeatsRequests = new LockedSeatsRequests();
+        lockedSeatsRequests.setSeatsId(Arrays.asList(order.getSeatIds().split(",")));
+        lockedSeatsRequests.setUser(user.getUsername());
+        lockedSeatsRequests.setPrice(order.getAmount());
+        lockedSeatsRequests.setCgst(order.getCgst());
+        lockedSeatsRequests.setSgst(order.getSgst());
+        lockedSeatsRequests.setTierName(order.getTierName());
+
+        String bId = generateUniqueBookingId();
+        lockedSeatsRequests.setBookingID(bId);
+        lockedSeatsRequests.setShowId(order.getShowId());
+
+        // Actually lock the seats permanently in the database
+        bookingService.bookSeats(lockedSeatsRequests);
+        log.info("Booking successfully generated for order: " + order.getOrderId());
+
+        return bId;
+    }
+
+    @Transactional
     public BookingSuccessResponse verifyPayment(String orderId) {
-        System.out.println("Order Id is : "+orderId);
         PaymentOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        Optional<Movie> opmovie = movieRepo.findById(order.getMovieId());
-        if(opmovie.isEmpty()) return null;
-        Movie movie = opmovie.get();
+        Movie movie = movieRepo.findById(order.getMovieId()).orElse(null);
+        Show show = showRepo.findById(order.getShowId()).orElse(null);
+        if(movie == null || show == null) return null;
+        Screen screen = screenRepo.findById(show.getSId()).orElse(null);
+        Theatre theatre = theatreRepo.findById(screen.getTheatre().getId()).orElse(null);
 
-        Optional<Show> opshow = showRepo.findById(order.getShowId());
-        if(opshow.isEmpty()) return null;
-        Show show = opshow.get();
+        // IDEMPOTENCY CHECK: If already paid (e.g., webhook beat the frontend), return success
+        if ("PAID".equalsIgnoreCase(order.getStatus())) {
 
-        Optional<Screen> opscreen = screenRepo.findById(show.getSId());
-        if(opscreen.isEmpty()) return null;
-        Screen screen = opscreen.get();
+            // Grab the first seat from the order's seat list (e.g. "A1" from "A1,A2")
+            String firstSeat = order.getSeatIds().split(",")[0].trim();
 
-        Optional<Theatre> optheatre = theatreRepo.findById(screen.getTheatre().getId());
-        if(optheatre.isEmpty()) return null;
-        Theatre theatre = optheatre.get();
+            // Use the new custom query to find the booking
+            Optional<Booking> existingBookingOpt = bookingRepo.findByShowIdAndSeatIdPart(order.getShowId(), firstSeat);
 
+            String bId = existingBookingOpt.isPresent() ? existingBookingOpt.get().getBookingID() : "PROCESSED";
 
-        // Call Cashfree Get Order API
+            return new BookingSuccessResponse(true, "Payment verified.", movie.getTitle(), movie.getPoster(), bId,
+                    String.valueOf(movie.getCertification()), theatre.getName(), theatre.getAddress(), theatre.getCity(),
+                    screen.getSname(), order.getTierName(), order.getSeatIds(), show.getFormat(), show.getStart(),
+                    show.getShowDate(), order.getAmount(), order.getCgst(), order.getSgst());
+        }
+
         String url = cashfreeApiUrl + "/pg/orders/" + orderId;
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-api-version", "2023-08-01");
+        headers.set("x-api-version", "2025-01-01");
         headers.set("x-client-id", clientId);
         headers.set("x-client-secret", clientSecret);
-        System.out.println(url+" called.....");
+
         RestTemplate restTemplate = new RestTemplate();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             String status = (String) response.getBody().get("order_status");
 
             if ("PAID".equalsIgnoreCase(status)) {
-                // Update DB
-                order.setStatus("PAID");
-                orderRepository.save(order);
-                User user = userRepo.getUserById(order.getUserId());
-                LockedSeatsRequests lockedSeatsRequests = new LockedSeatsRequests();
-                lockedSeatsRequests.setSeatsId(Arrays.asList(order.getSeatIds().split(",")));
-                lockedSeatsRequests.setUser(user.getUsername());
-                lockedSeatsRequests.setPrice(order.getAmount());
-                lockedSeatsRequests.setCgst(order.getCgst());
-                lockedSeatsRequests.setSgst(order.getSgst());
-                lockedSeatsRequests.setTierName(order.getTierName());
-                String bId = generateUniqueBookingId();
-                System.out.println("bId is : "+ bId);
-                lockedSeatsRequests.setBookingID(bId);
-                lockedSeatsRequests.setShowId(order.getShowId());
-                bookingService.bookSeats(lockedSeatsRequests);
-
-               Optional<Booking> opbooking = bookingRepo.findByBookingID(bId);
-               if(opbooking.isEmpty()) return null;
-               Booking booking = opbooking.get();
-                System.out.println(" Fetched Booking Id from bookings : "+ booking.getBookingID());
-
-                return new BookingSuccessResponse(true,
-                        "Payment made successfully.", movie.getTitle(),
-                        movie.getPoster(),booking.getBookingID(), String.valueOf(movie.getCertification()),
-                        theatre.getName(),theatre.getAddress(), theatre.getCity(), screen.getSname(),
-                        order.getTierName(), order.getSeatIds(), show.getFormat(),show.getStart(),
+                String bId = processSuccessfulOrder(order);
+                return new BookingSuccessResponse(true, "Payment made successfully.", movie.getTitle(), movie.getPoster(), bId,
+                        String.valueOf(movie.getCertification()), theatre.getName(), theatre.getAddress(), theatre.getCity(),
+                        screen.getSname(), order.getTierName(), order.getSeatIds(), show.getFormat(), show.getStart(),
                         show.getShowDate(), order.getAmount(), order.getCgst(), order.getSgst());
-            } else {
+            } else if ("FAILED".equalsIgnoreCase(status)) {
+                order.setStatus("FAILED");
+                orderRepository.save(order);
                 return new BookingSuccessResponse(false, "Payment unsuccessful", null, null, null, null, null, null, null, null, null, null,null,null, null, null, null, null);
             }
-        } else {
-            throw new RuntimeException("Failed to verify payment with Cashfree");
         }
+        throw new RuntimeException("Failed to verify payment with Cashfree");
     }
 
+    // --- NEW WEBHOOK PROCESSING LOGIC ---
+    public void handleWebhook(String rawPayload, String signature, String timestamp) {
+        try {
+            if (signature == null || timestamp == null) {
+                log.error("Webhook rejected: Missing security headers");
+                return;
+            }
 
+            // 1. Verify Cashfree Signature (CRITICAL SECURITY)
+            String dataToSign = timestamp + rawPayload;
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(clientSecret.getBytes(), "HmacSHA256");
+            mac.init(secretKeySpec);
+            String calculatedSignature = Base64.getEncoder().encodeToString(mac.doFinal(dataToSign.getBytes()));
+
+            if (!calculatedSignature.equals(signature)) {
+                log.error("Webhook rejected: Signature verification failed!");
+                return;
+            }
+
+            // 2. Parse Webhook Payload
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(rawPayload);
+
+            JsonNode dataNode = rootNode.path("data");
+            JsonNode orderNode = dataNode.path("order");
+            JsonNode paymentNode = dataNode.path("payment");
+
+            String orderId = orderNode.path("order_id").asText();
+            String paymentStatus = paymentNode.path("payment_status").asText();
+
+            Optional<PaymentOrder> opOrder = orderRepository.findById(orderId);
+            if (opOrder.isEmpty()) {
+                log.error("Webhook: Order not found in DB: " + orderId);
+                return;
+            }
+
+            PaymentOrder order = opOrder.get();
+
+            // 3. Idempotency Check: Don't process twice
+            if ("PAID".equalsIgnoreCase(order.getStatus())) {
+                log.info("Webhook: Order " + orderId + " is already PAID. Skipping.");
+                return;
+            }
+
+            // 4. Execute Core Booking Logic
+            if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
+                log.info("Webhook received SUCCESS for order " + orderId + ". Booking seats in background...");
+                processSuccessfulOrder(order);
+            } else if ("FAILED".equalsIgnoreCase(paymentStatus)) {
+                order.setStatus("FAILED");
+                orderRepository.save(order);
+                log.info("Webhook marked order " + orderId + " as FAILED.");
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing Cashfree webhook", e);
+        }
+    }
 }
