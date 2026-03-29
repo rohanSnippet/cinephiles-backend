@@ -3,6 +3,7 @@ package com.projects.cinephiles.Service;
 import com.projects.cinephiles.DTO.RestPageImpl;
 import com.projects.cinephiles.Repo.CrewMemberRepo;
 import com.projects.cinephiles.Repo.MovieRepo;
+import com.projects.cinephiles.Repo.OrderRepo;
 import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
@@ -35,6 +36,9 @@ public class MovieService {
 
     @Autowired
     private MovieRepo movieRepo;
+
+    @Autowired
+    private OrderRepo orderRepo;
 
     @Autowired
     private CrewMemberRepo crewMemberRepo;
@@ -298,4 +302,23 @@ public class MovieService {
         }
     }
 
+    @Cacheable(value = "trendingMovies", key = "#timeWindow")
+    public List<Movie> getTrendingMovies(String timeWindow) {
+        System.out.println("CACHE MISS: Calculating trending movies for " + timeWindow);
+
+        LocalDate startDate;
+        LocalTime startTime = LocalTime.now();
+
+        if ("7d".equalsIgnoreCase(timeWindow)) {
+            // Exactly 7 days ago, from the current time
+            startDate = LocalDate.now().minusDays(7);
+        } else {
+            // Exactly 24 hours ago
+            startDate = LocalDate.now().minusDays(1);
+        }
+
+        // Fetch the top 5 trending movies
+        Pageable topFive = PageRequest.of(0, 5);
+        return orderRepo.findTrendingMovies(startDate, startTime, topFive);
+    }
 }
