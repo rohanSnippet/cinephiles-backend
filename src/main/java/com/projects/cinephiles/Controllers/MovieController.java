@@ -114,5 +114,8 @@ public class MovieController {
         return new ResponseEntity<>("Movie bulk upload started in background. It will be completed shortly...", HttpStatus.CREATED);
     }
 
-
+    @GetMapping("/trending")
+    public ResponseEntity<List<Movie>> getTrendingMovies(@RequestParam(defaultValue = "24h") String window) {
+        return ResponseEntity.ok(movieService.getTrendingMovies(window));
+    }
 }
