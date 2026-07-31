@@ -23,6 +23,8 @@ import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -117,6 +119,7 @@ public class PaymentService {
         payload.put("order_currency", "INR");
         payload.put("order_amount", roundedAmount);
 
+
         Map<String, String> customerDetails = new HashMap<>();
         customerDetails.put("customer_id", generateCustomerId(user.getId(),request.getUsername()));
         customerDetails.put("customer_phone", "9999999999");
@@ -128,6 +131,9 @@ public class PaymentService {
         //orderMeta.put("return_url", frontendReturnUrl + "booking-confirmation?order_id={order_id}");
         orderMeta.put("return_url", frontendReturnUrl + "/payment-success?order_id={order_id}");
         payload.put("order_meta", orderMeta);
+
+        ZonedDateTime expiry = ZonedDateTime.now().plusMinutes(16);
+        payload.put("order_expiry_time", expiry.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
         RestTemplate restTemplate = new RestTemplate();
@@ -148,11 +154,8 @@ public class PaymentService {
         return namePart + "_" + userId;
     }
 
-    // --- NEW: REUSABLE CORE BOOKING LOGIC ---
     @Transactional
     public String processSuccessfulOrder(PaymentOrder order) {
-        order.setStatus("PAID");
-        orderRepository.save(order);
 
         User user = userRepo.getUserById(order.getUserId());
         LockedSeatsRequests lockedSeatsRequests = new LockedSeatsRequests();
@@ -162,19 +165,28 @@ public class PaymentService {
         lockedSeatsRequests.setCgst(order.getCgst());
         lockedSeatsRequests.setSgst(order.getSgst());
         lockedSeatsRequests.setTierName(order.getTierName());
-
-        String bId = generateUniqueBookingId();
-        lockedSeatsRequests.setBookingID(bId);
         lockedSeatsRequests.setShowId(order.getShowId());
 
-        // Actually lock the seats permanently in the database
-        bookingService.bookSeats(lockedSeatsRequests);
-        log.info("Booking successfully generated for order: " + order.getOrderId());
+        // FIX: Generate and set Booking ID BEFORE attempting to book seats
+        String bId = generateUniqueBookingId();
+        lockedSeatsRequests.setBookingID(bId);
 
-        return bId;
+        // Attempt to book seats (this will fail if the Redis lock has expired)
+        ResponseEntity<String> bookingResponse = bookingService.bookSeats(lockedSeatsRequests);
+
+        if(bookingResponse.getStatusCode() == HttpStatus.OK){
+            order.setStatus("PAID");
+            orderRepository.save(order);
+            log.info("Booking successfully generated for order: " + order.getOrderId());
+            return bId;
+        } else {
+            log.warn("Payment succeeded on Cashfree for order {}, but Redis seat lock had expired.", order.getOrderId());
+            order.setStatus("EXPIRED_REFUND_PENDING");
+            orderRepository.save(order);
+            return "EXPIRED_REFUND_PENDING";
+        }
     }
 
-    @Transactional
     public BookingSuccessResponse verifyPayment(String orderId) {
         PaymentOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -185,21 +197,19 @@ public class PaymentService {
         Screen screen = screenRepo.findById(show.getSId()).orElse(null);
         Theatre theatre = theatreRepo.findById(screen.getTheatre().getId()).orElse(null);
 
-        // IDEMPOTENCY CHECK: If already paid (e.g., webhook beat the frontend), return success
+        // FIX 1: IDEMPOTENCY CHECK for BOTH PAID and EXPIRED states
         if ("PAID".equalsIgnoreCase(order.getStatus())) {
-
-            // Grab the first seat from the order's seat list (e.g. "A1" from "A1,A2")
             String firstSeat = order.getSeatIds().split(",")[0].trim();
-
-            // Use the new custom query to find the booking
             Optional<Booking> existingBookingOpt = bookingRepo.findByShowIdAndSeatIdPart(order.getShowId(), firstSeat);
-
             String bId = existingBookingOpt.isPresent() ? existingBookingOpt.get().getBookingID() : "PROCESSED";
 
             return new BookingSuccessResponse(true, "Payment verified.", movie.getTitle(), movie.getPoster(), bId,
                     String.valueOf(movie.getCertification()), theatre.getName(), theatre.getAddress(), theatre.getCity(),
                     screen.getSname(), order.getTierName(), order.getSeatIds(), show.getFormat(), show.getStart(),
                     show.getShowDate(), order.getAmount(), order.getCgst(), order.getSgst());
+        } else if ("EXPIRED_REFUND_PENDING".equalsIgnoreCase(order.getStatus())) {
+            return new BookingSuccessResponse(false, "Your payment was processed, but your 7-minute seat reservation expired before completion. A full refund has been initiated.",
+                    movie.getTitle(), movie.getPoster(), null, null, null, null, null, null, null, null, null, null, null, order.getAmount(), null, null);
         }
 
         String url = cashfreeApiUrl + "/pg/orders/" + orderId;
@@ -216,10 +226,18 @@ public class PaymentService {
 
             if ("PAID".equalsIgnoreCase(status)) {
                 String bId = processSuccessfulOrder(order);
+
+                // FIX 2: Evaluate the outcome of processSuccessfulOrder
+                if ("EXPIRED_REFUND_PENDING".equals(bId)) {
+                    return new BookingSuccessResponse(false, "Your payment was processed, but your 7-minute seat reservation expired before completion. A full refund has been initiated.",
+                            movie.getTitle(), movie.getPoster(), null, null, null, null, null, null, null, null, null, null, null, order.getAmount(), null, null);
+                }
+
                 return new BookingSuccessResponse(true, "Payment made successfully.", movie.getTitle(), movie.getPoster(), bId,
                         String.valueOf(movie.getCertification()), theatre.getName(), theatre.getAddress(), theatre.getCity(),
                         screen.getSname(), order.getTierName(), order.getSeatIds(), show.getFormat(), show.getStart(),
                         show.getShowDate(), order.getAmount(), order.getCgst(), order.getSgst());
+
             } else if ("FAILED".equalsIgnoreCase(status)) {
                 order.setStatus("FAILED");
                 orderRepository.save(order);
@@ -268,9 +286,11 @@ public class PaymentService {
 
             PaymentOrder order = opOrder.get();
 
+            // Inside handleWebhook(...)
+
             // 3. Idempotency Check: Don't process twice
-            if ("PAID".equalsIgnoreCase(order.getStatus())) {
-                log.info("Webhook: Order " + orderId + " is already PAID. Skipping.");
+            if ("PAID".equalsIgnoreCase(order.getStatus()) || "EXPIRED_REFUND_PENDING".equalsIgnoreCase(order.getStatus())) {
+                log.info("Webhook: Order " + orderId + " is already processed (Status: " + order.getStatus() + "). Skipping.");
                 return;
             }
 
