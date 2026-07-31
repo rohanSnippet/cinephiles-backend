@@ -60,7 +60,7 @@ public class RedisConfig {
         // Example: The "user" cache expires in 30 minutes
         specificCacheConfigs.put("user", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
-        specificCacheConfigs.put("featuredMovies", defaultConfig.entryTtl(Duration.ofHours(12)));
+        specificCacheConfigs.put("featuredMovies", defaultConfig.entryTtl(Duration.ofHours(48)));
 
         // Example: If you have a "movies" cache, make it expire in 2 days
         specificCacheConfigs.put("movies", defaultConfig.entryTtl(Duration.ofDays(2)));
