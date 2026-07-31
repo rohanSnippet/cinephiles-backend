@@ -112,6 +112,7 @@ public class BookingService {
 
         // 1. Check if lock still exists in Redis
         if (lockedSeatsStr == null) {
+            System.out.println("Timeout. Seats cannot be booked");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The locked seats have expired.");
         }
 
