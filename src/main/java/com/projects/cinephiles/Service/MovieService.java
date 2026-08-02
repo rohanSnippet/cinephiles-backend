@@ -8,7 +8,6 @@ import com.projects.cinephiles.Repo.TheatreRepo;
 import com.projects.cinephiles.models.CrewMember;
 import com.projects.cinephiles.models.Movie;
 import com.projects.cinephiles.models.Trailers;
-import io.netty.util.concurrent.CompleteFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,17 +16,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,9 @@ public class MovieService {
 
     @Autowired
     private TheatreRepo theatreRepo;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     @Cacheable(value = "featuredMovies", key = "#region")
     public List<Movie> getFeaturedMoviesByRegion(String region) {
@@ -302,23 +306,69 @@ public class MovieService {
         }
     }
 
-    @Cacheable(value = "trendingMovies", key = "#timeWindow")
+//    @Cacheable(value = "trendingMovies", key = "#timeWindow")
     public List<Movie> getTrendingMovies(String timeWindow) {
         System.out.println("CACHE MISS: Calculating trending movies for " + timeWindow);
 
-        LocalDate startDate;
-        LocalTime startTime = LocalTime.now();
+        int daysToAggregate = "7d".equalsIgnoreCase(timeWindow) ? 7 : 1;
 
-        if ("7d".equalsIgnoreCase(timeWindow)) {
-            // Exactly 7 days ago, from the current time
-            startDate = LocalDate.now().minusDays(7);
-        } else {
-            // Exactly 24 hours ago
-            startDate = LocalDate.now().minusDays(1);
+        List<String> bucketKeys = new ArrayList<>();
+        for (int i = 0; i < daysToAggregate; i++) {
+            bucketKeys.add("trending:daily:" + LocalDate.now().minusDays(i).toString());
         }
 
-        // Fetch the top 5 trending movies
-        Pageable topFive = PageRequest.of(0, 5);
-        return orderRepo.findTrendingMovies(startDate, startTime, topFive);
+        String unionKey = "trending:union:" + timeWindow;
+        String firstKey = bucketKeys.get(0);
+        List<String> otherKeys = bucketKeys.subList(1, bucketKeys.size());
+
+        // 2. Merge the buckets (ZUNIONSTORE) if asking for 7 days
+        if (otherKeys.isEmpty()) {
+            unionKey = firstKey;
+        } else {
+            // For 7d, merge all 7 keys into a temporary union key
+            redisTemplate.opsForZSet().unionAndStore(firstKey, otherKeys, unionKey);
+            redisTemplate.expire(unionKey, Duration.ofMinutes(5)); // Cache the merged math for 5 mins
+        }
+
+        // 3. Fetch the top 5 movie IDs (highest score to lowest) in O(log N) time
+        Set<String> trendingIdsStr = redisTemplate.opsForZSet().reverseRange(unionKey, 0, 4);
+
+        if (trendingIdsStr == null || trendingIdsStr.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 4. Convert IDs to Longs and fetch from the Database
+        List<Long> movieIds = trendingIdsStr.stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+
+        List<Movie> movies = movieRepo.findAllById(movieIds);
+
+        // 5. Restore the correct 1st-to-5th ranking order (JPA findAllById does not guarantee order)
+        Map<Long, Movie> movieMap = movies.stream()
+                .collect(Collectors.toMap(Movie::getId, m -> m));
+
+        return movieIds.stream()
+                .map(movieMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+
+
+//       OLD DATA
+//        LocalDate startDate;
+//        LocalTime startTime = LocalTime.now();
+//
+//        if ("7d".equalsIgnoreCase(timeWindow)) {
+//            // Exactly 7 days ago, from the current time
+//            startDate = LocalDate.now().minusDays(7);
+//        } else {
+//            // Exactly 24 hours ago
+//            startDate = LocalDate.now().minusDays(1);
+//        }
+//
+//        // Fetch the top 5 trending movies
+//        Pageable topFive = PageRequest.of(0, 5);
+//        return orderRepo.findTrendingMovies(startDate, startTime, topFive);
     }
 }
