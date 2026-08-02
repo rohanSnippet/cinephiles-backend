@@ -158,6 +158,13 @@ public class BookingService {
         order.setTotalAmount(request.getPrice() * request.getSeatsId().size());
         orderRepo.save(order);
 
+        String todayBucket = "trending:daily:" + LocalDate.now().toString();
+        String movieIdStr = String.valueOf(show.getMovie().getId());
+        int numberOfSeatsBooked = request.getSeatsId().size();
+
+        redisTemplate.opsForZSet().incrementScore(todayBucket, movieIdStr, numberOfSeatsBooked);
+        redisTemplate.expire(todayBucket, Duration.ofDays(8));
+
         // Update Show
         show.getBooked().addAll(request.getSeatsId());
         showRepo.save(show);
