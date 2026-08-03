@@ -59,6 +59,7 @@ public class SecurityFilterConfig {
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers("/movie/add-movie", "/movie/edit-movie/**", "/movie/delete-movie/**").hasRole("ADMIN")
                             .requestMatchers(HttpMethod.GET, "/comments/**").permitAll()
+                            .requestMatchers("/trending/stream/**").permitAll()
                             .requestMatchers("/movie/featured","/auth/signup", "/auth/login", "/oauth2/**", "/movie/**","/movie/upcoming-page", "/show/**", "/theatre/get-theatres/by-location", "/actor/**", "/",  "/api/payment/verify/**").permitAll()
                             .anyRequest().authenticated())
                     .oauth2Login(oauth2 -> oauth2
