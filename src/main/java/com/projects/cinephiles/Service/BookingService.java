@@ -1,5 +1,6 @@
 package com.projects.cinephiles.Service;
 
+import com.projects.cinephiles.Controllers.TrendingStreamController;
 import com.projects.cinephiles.DTO.LockedSeatsRequests;
 import com.projects.cinephiles.Repo.*;
 import com.projects.cinephiles.models.*;
@@ -30,10 +31,12 @@ public class BookingService {
     private TheatreRepo theatreRepo;
     @Autowired
     private OrderRepo orderRepo;
-
-    // Inject StringRedisTemplate instead of LockedSeatsRepo
+    @Autowired
+    private MovieService movieService;
     @Autowired
     private StringRedisTemplate redisTemplate;
+    @Autowired
+    private TrendingStreamController trendingStreamController;
 
     private static final long LOCK_TIME_MINUTES = 7;
 
@@ -164,6 +167,9 @@ public class BookingService {
 
         redisTemplate.opsForZSet().incrementScore(todayBucket, movieIdStr, numberOfSeatsBooked);
         redisTemplate.expire(todayBucket, Duration.ofDays(8));
+
+        List<Movie> latestTrending = movieService.getTrendingMovies("24h");
+        trendingStreamController.broadcastTrendingUpdate(latestTrending);
 
         // Update Show
         show.getBooked().addAll(request.getSeatsId());
