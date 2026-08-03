@@ -59,6 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }else if(request.getRequestURI().contains("/stream")){
+            token = request.getParameter("token");
         }
         else {
             logger.info("Invalid Header Value !! ");
