@@ -22,3 +22,4 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
