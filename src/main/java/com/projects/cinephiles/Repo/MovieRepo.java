@@ -35,4 +35,23 @@ public interface MovieRepo extends JpaRepository<Movie,Long> {
     Page<Movie> searchByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Movie> findByReleaseDateAfter(LocalDate date, Pageable pageable);
+
+    @Query(value = """
+        SELECT * FROM movies m
+        WHERE 
+            -- 1. Full Text Search (Matches root words in title and description)
+            to_tsvector('english', m.title || ' ' || COALESCE(m.description, '')) @@ plainto_tsquery('english', :query)
+            OR
+            -- 2. Trigram Similarity (Catches typos like 'Btman')
+            m.title % :query
+            OR
+            -- 3. Phonetics (Catches "sounds like" words)
+            dmetaphone(m.title) = dmetaphone(:query)
+        ORDER BY 
+            -- Rank exact FTS matches highest, then similarity score
+            ts_rank(to_tsvector('english', m.title || ' ' || COALESCE(m.description, '')), plainto_tsquery('english', :query)) DESC,
+            similarity(m.title, :query) DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<Movie> performAdvancedSearch(@Param("query") String query, @Param("limit") int limit);
 }
