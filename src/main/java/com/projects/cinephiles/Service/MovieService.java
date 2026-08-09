@@ -231,9 +231,19 @@ public class MovieService {
         return new ResponseEntity<>("Movie Data Updated", HttpStatus.OK);
     }
 
+//    public List<Movie> searchMovies(String query, int limit) {
+//        Pageable pageable = PageRequest.of(0, limit);
+//        return movieRepo.findByTitleContainingIgnoreCase(query, pageable);
+//    }
+
     public List<Movie> searchMovies(String query, int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
-        return movieRepo.findByTitleContainingIgnoreCase(query, pageable);
+        // If the query is empty, return an empty list immediately to save a DB call
+        if (query == null || query.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        // Execute the new advanced PostgreSQL search
+        return movieRepo.performAdvancedSearch(query, limit);
     }
 
     //bulk upload movies data
