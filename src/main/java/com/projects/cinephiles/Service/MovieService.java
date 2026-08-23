@@ -1,6 +1,7 @@
 package com.projects.cinephiles.Service;
 
 import com.projects.cinephiles.DTO.RestPageImpl;
+import com.projects.cinephiles.DTO.TrendingMovieDTO;
 import com.projects.cinephiles.Repo.CrewMemberRepo;
 import com.projects.cinephiles.Repo.MovieRepo;
 import com.projects.cinephiles.Repo.OrderRepo;
@@ -317,7 +318,56 @@ public class MovieService {
     }
 
 //    @Cacheable(value = "trendingMovies", key = "#timeWindow")
-    public List<Movie> getTrendingMovies(String timeWindow) {
+//    @Transactional(readOnly = true)
+//    public List<Movie> getTrendingMovies(String timeWindow) {
+//        System.out.println("CACHE MISS: Calculating trending movies for " + timeWindow);
+//
+//        int daysToAggregate = "7d".equalsIgnoreCase(timeWindow) ? 7 : 1;
+//
+//        List<String> bucketKeys = new ArrayList<>();
+//        for (int i = 0; i < daysToAggregate; i++) {
+//            bucketKeys.add("trending:daily:" + LocalDate.now().minusDays(i).toString());
+//        }
+//
+//        String unionKey = "trending:union:" + timeWindow;
+//        String firstKey = bucketKeys.get(0);
+//        List<String> otherKeys = bucketKeys.subList(1, bucketKeys.size());
+//
+//        // 2. Merge the buckets (ZUNIONSTORE) if asking for 7 days
+//        if (otherKeys.isEmpty()) {
+//            unionKey = firstKey;
+//        } else {
+//            // For 7d, merge all 7 keys into a temporary union key
+//            redisTemplate.opsForZSet().unionAndStore(firstKey, otherKeys, unionKey);
+//            redisTemplate.expire(unionKey, Duration.ofMinutes(5)); // Cache the merged math for 5 mins
+//        }
+//
+//        // 3. Fetch the top 5 movie IDs (highest score to lowest) in O(log N) time
+//        Set<String> trendingIdsStr = redisTemplate.opsForZSet().reverseRange(unionKey, 0, 4);
+//
+//        if (trendingIdsStr == null || trendingIdsStr.isEmpty()) {
+//            return Collections.emptyList();
+//        }
+//
+//        // 4. Convert IDs to Longs and fetch from the Database
+//        List<Long> movieIds = trendingIdsStr.stream()
+//                .map(Long::valueOf)
+//                .collect(Collectors.toList());
+//
+//        List<Movie> movies = movieRepo.findAllById(movieIds);
+//
+//        // 5. Restore the correct 1st-to-5th ranking order (JPA findAllById does not guarantee order)
+//        Map<Long, Movie> movieMap = movies.stream()
+//                .collect(Collectors.toMap(Movie::getId, m -> m));
+//
+//        return movieIds.stream()
+//                .map(movieMap::get)
+//                .filter(Objects::nonNull)
+//                .collect(Collectors.toList());
+//    }
+
+    @Transactional(readOnly = true)
+    public List<TrendingMovieDTO> getTrendingMovies(String timeWindow) {
         System.out.println("CACHE MISS: Calculating trending movies for " + timeWindow);
 
         int daysToAggregate = "7d".equalsIgnoreCase(timeWindow) ? 7 : 1;
@@ -331,54 +381,49 @@ public class MovieService {
         String firstKey = bucketKeys.get(0);
         List<String> otherKeys = bucketKeys.subList(1, bucketKeys.size());
 
-        // 2. Merge the buckets (ZUNIONSTORE) if asking for 7 days
+        // Merge the buckets (ZUNIONSTORE) if asking for 7 days
         if (otherKeys.isEmpty()) {
             unionKey = firstKey;
         } else {
-            // For 7d, merge all 7 keys into a temporary union key
             redisTemplate.opsForZSet().unionAndStore(firstKey, otherKeys, unionKey);
-            redisTemplate.expire(unionKey, Duration.ofMinutes(5)); // Cache the merged math for 5 mins
+            redisTemplate.expire(unionKey, Duration.ofMinutes(5));
         }
 
-        // 3. Fetch the top 5 movie IDs (highest score to lowest) in O(log N) time
+        // Fetch the top 5 movie IDs (highest score to lowest)
         Set<String> trendingIdsStr = redisTemplate.opsForZSet().reverseRange(unionKey, 0, 4);
 
         if (trendingIdsStr == null || trendingIdsStr.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 4. Convert IDs to Longs and fetch from the Database
+        // Convert IDs to Longs and fetch from the Database
         List<Long> movieIds = trendingIdsStr.stream()
                 .map(Long::valueOf)
                 .collect(Collectors.toList());
 
         List<Movie> movies = movieRepo.findAllById(movieIds);
 
-        // 5. Restore the correct 1st-to-5th ranking order (JPA findAllById does not guarantee order)
+        // Restore the correct 1st-to-5th ranking order
         Map<Long, Movie> movieMap = movies.stream()
                 .collect(Collectors.toMap(Movie::getId, m -> m));
 
+        // Map the Entity to the DTO safely inside the Transactional boundary
         return movieIds.stream()
                 .map(movieMap::get)
                 .filter(Objects::nonNull)
+                .map(movie -> {
+                    TrendingMovieDTO dto = new TrendingMovieDTO();
+                    dto.setId(movie.getId());
+                    dto.setTitle(movie.getTitle());
+                    dto.setPoster(movie.getPoster());
+
+                    // Safely fetch only the collections the UI actually needs for the card
+                    if (movie.getGenre() != null) {
+                        dto.setGenre(new ArrayList<>(movie.getGenre()));
+                    }
+
+                    return dto;
+                })
                 .collect(Collectors.toList());
-
-
-
-//       OLD DATA
-//        LocalDate startDate;
-//        LocalTime startTime = LocalTime.now();
-//
-//        if ("7d".equalsIgnoreCase(timeWindow)) {
-//            // Exactly 7 days ago, from the current time
-//            startDate = LocalDate.now().minusDays(7);
-//        } else {
-//            // Exactly 24 hours ago
-//            startDate = LocalDate.now().minusDays(1);
-//        }
-//
-//        // Fetch the top 5 trending movies
-//        Pageable topFive = PageRequest.of(0, 5);
-//        return orderRepo.findTrendingMovies(startDate, startTime, topFive);
     }
 }
