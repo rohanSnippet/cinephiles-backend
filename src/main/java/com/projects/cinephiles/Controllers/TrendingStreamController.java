@@ -1,5 +1,6 @@
 package com.projects.cinephiles.Controllers;
 
+import com.projects.cinephiles.DTO.TrendingMovieDTO;
 import com.projects.cinephiles.models.Movie;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +34,7 @@ public class TrendingStreamController {
     }
 
     // Call this method whenever a booking happens
-    public void broadcastTrendingUpdate(List<Movie> updatedTrendingList) {
+    public void broadcastTrendingUpdate(List<TrendingMovieDTO> updatedTrendingList) {
         System.out.println("broadcast called");
         for (SseEmitter emitter : emitters) {
             try {
