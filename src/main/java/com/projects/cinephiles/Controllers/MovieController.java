@@ -3,6 +3,7 @@ package com.projects.cinephiles.Controllers;
 
 import com.projects.cinephiles.DTO.FeaturedMovieUpdateRequest;
 import com.projects.cinephiles.DTO.RestPageImpl;
+import com.projects.cinephiles.DTO.TrendingMovieDTO;
 import com.projects.cinephiles.Service.MovieService;
 import com.projects.cinephiles.models.Movie;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,7 +116,7 @@ public class MovieController {
     }
 
     @GetMapping("/trending")
-    public ResponseEntity<List<Movie>> getTrendingMovies(@RequestParam(defaultValue = "24h") String window) {
+    public ResponseEntity<List<TrendingMovieDTO>> getTrendingMovies(@RequestParam(defaultValue = "24h") String window) {
         return ResponseEntity.ok(movieService.getTrendingMovies(window));
     }
 }
