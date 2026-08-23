@@ -168,8 +168,9 @@ public class BookingService {
         redisTemplate.opsForZSet().incrementScore(todayBucket, movieIdStr, numberOfSeatsBooked);
         redisTemplate.expire(todayBucket, Duration.ofDays(8));
 
-        List<Movie> latestTrending = movieService.getTrendingMovies("24h");
-        trendingStreamController.broadcastTrendingUpdate(latestTrending);
+ // Unopimized code to broadcast each movie to the client.
+//        List<Movie> latestTrending = movieService.getTrendingMovies("24h");
+//        trendingStreamController.broadcastTrendingUpdate(latestTrending);
 
         // Update Show
         show.getBooked().addAll(request.getSeatsId());
