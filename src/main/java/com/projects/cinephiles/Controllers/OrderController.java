@@ -22,6 +22,11 @@ public class OrderController {
     @GetMapping("/getOrder/{username}")
     public ResponseEntity<List<Order>> getOrderByUser(@PathVariable String username){
         return orderService.findByUsername(username);
+    }
 
+    @GetMapping("/getAll")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Order>> getAllOrders() {
+        return orderService.getAllOrders();
     }
 }

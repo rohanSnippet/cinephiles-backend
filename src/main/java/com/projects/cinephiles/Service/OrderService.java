@@ -20,4 +20,9 @@ public class OrderService {
         List<Order> orders = orderRepo.findByUsername(username);
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
+
+    public ResponseEntity<List<Order>> getAllOrders() {
+        List<Order> orders = orderRepo.findAll();
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
 }
