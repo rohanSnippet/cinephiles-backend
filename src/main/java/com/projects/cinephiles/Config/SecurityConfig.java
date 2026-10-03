@@ -15,35 +15,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
-    }
-
-//    @Bean
-//    public UserDetailsService userDetailsService(){
-//        UserDetails adminUser = User.builder()
-//                .username("admin")
-//                .password(passwordEncoder().encode("admin"))
-//                .roles("ADMIN")
-//                .build();
-//
-//        UserDetails normalUser = User.builder()
-//                .username("rohan@gmail.com")
-//                .password(passwordEncoder().encode("user"))
-//                .roles("USER")
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(adminUser,normalUser);
-//    }
-
-
     private final CustomUserDetailsService userDetailsService;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)throws Exception{
